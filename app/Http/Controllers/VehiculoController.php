@@ -7,79 +7,61 @@ use Illuminate\Http\Request;
 
 class VehiculoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        //
+        $vehiculos = Vehiculo::orderBy('id', 'desc')->get();
+
+        return view('vehiculos.index', compact('vehiculos'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('vehiculos.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'alias' => 'required|string|max:255|unique:vehiculos,alias',
+            'descripcion' => 'nullable|string',
+        ]);
+
+        Vehiculo::create($request->all());
+
+        return redirect()->route('vehiculos.index')->with('success', 'Vehículo creado correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Vehiculo  $vehiculo
-     * @return \Illuminate\Http\Response
-     */
     public function show(Vehiculo $vehiculo)
     {
-        //
+        return view('vehiculos.show', compact('vehiculo'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Vehiculo  $vehiculo
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Vehiculo $vehiculo)
     {
-        //
+        return view('vehiculos.edit', compact('vehiculo'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Vehiculo  $vehiculo
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Vehiculo $vehiculo)
     {
-        //
+        $request->validate([
+            'alias' => 'required|string|max:255|unique:vehiculos,alias,' . $vehiculo->id,
+            'descripcion' => 'nullable|string',
+        ]);
+
+        $vehiculo->update($request->all());
+
+        return redirect()->route('vehiculos.index')->with('success', 'Vehículo actualizado correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Vehiculo  $vehiculo
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Vehiculo $vehiculo)
     {
-        //
+        $vehiculo->delete();
+
+        return redirect()->route('vehiculos.index')->with('success', 'Vehículo eliminado correctamente.');
     }
 }

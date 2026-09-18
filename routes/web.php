@@ -12,5 +12,17 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
+
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::resource('clientes', 'ClienteController');
+Route::resource('consolidados', 'ConsolidadoController');
+Route::resource('entradas', 'EntradaController');
+Route::resource('conductores', 'ConductorController');
+Route::resource('vehiculos', 'VehiculoController');
+Route::resource('transportadoras', 'TransportadoraController');
+Route::resource('bodegas', 'BodegaController');
+Route::resource('reempacadores', 'ReempacadorController');

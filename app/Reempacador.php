@@ -7,4 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Reempacador extends Model
 {
     protected $table = 'reempacadores';
+
+    protected $fillable = [
+        'nombre',
+        'clave',
+    ];
 }

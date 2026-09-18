@@ -7,79 +7,67 @@ use Illuminate\Http\Request;
 
 class ConsolidadoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        //
+        $consolidados = Consolidado::orderBy('id', 'desc')->get();
+
+        return view('consolidados.index', compact('consolidados'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('consolidados.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'numero' => 'required|string|max:255',
+            'palets' => 'nullable|integer|min:0',
+            'cliente_id' => 'required|integer',
+            'cliente_alias_numero' => 'nullable|boolean',
+            'notificacion' => 'nullable|date',
+        ]);
+
+        Consolidado::create($request->all());
+
+        return redirect()->route('consolidados.index')->with('success', 'Consolidado creado correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Consolidado  $consolidado
-     * @return \Illuminate\Http\Response
-     */
     public function show(Consolidado $consolidado)
     {
-        //
+        return view('consolidados.show', compact('consolidado'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Consolidado  $consolidado
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Consolidado $consolidado)
     {
-        //
+        return view('consolidados.edit', compact('consolidado'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Consolidado  $consolidado
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Consolidado $consolidado)
     {
-        //
+        $request->validate([
+            'numero' => 'required|string|max:255',
+            'palets' => 'nullable|integer|min:0',
+            'cliente_id' => 'required|integer',
+            'cliente_alias_numero' => 'nullable|boolean',
+            'notificacion' => 'nullable|date',
+        ]);
+
+        $consolidado->update($request->all());
+
+        return redirect()->route('consolidados.index')->with('success', 'Consolidado actualizado correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Consolidado  $consolidado
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Consolidado $consolidado)
     {
-        //
+        $consolidado->delete();
+
+        return redirect()->route('consolidados.index')->with('success', 'Consolidado eliminado correctamente.');
     }
 }

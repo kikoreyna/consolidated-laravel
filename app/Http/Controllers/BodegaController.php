@@ -7,79 +7,61 @@ use Illuminate\Http\Request;
 
 class BodegaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        //
+        $bodegas = Bodega::orderBy('id', 'desc')->get();
+
+        return view('bodegas.index', compact('bodegas'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('bodegas.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:bodegas,nombre',
+            'descripcion' => 'nullable|string',
+        ]);
+
+        Bodega::create($request->all());
+
+        return redirect()->route('bodegas.index')->with('success', 'Bodega creada correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Bodega  $bodega
-     * @return \Illuminate\Http\Response
-     */
     public function show(Bodega $bodega)
     {
-        //
+        return view('bodegas.show', compact('bodega'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Bodega  $bodega
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Bodega $bodega)
     {
-        //
+        return view('bodegas.edit', compact('bodega'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Bodega  $bodega
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Bodega $bodega)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:bodegas,nombre,' . $bodega->id,
+            'descripcion' => 'nullable|string',
+        ]);
+
+        $bodega->update($request->all());
+
+        return redirect()->route('bodegas.index')->with('success', 'Bodega actualizada correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Bodega  $bodega
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Bodega $bodega)
     {
-        //
+        $bodega->delete();
+
+        return redirect()->route('bodegas.index')->with('success', 'Bodega eliminada correctamente.');
     }
 }

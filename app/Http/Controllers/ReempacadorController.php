@@ -7,79 +7,61 @@ use Illuminate\Http\Request;
 
 class ReempacadorController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        //
+        $reempacadores = Reempacador::orderBy('id', 'desc')->get();
+
+        return view('reempacadores.index', compact('reempacadores'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('reempacadores.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'clave' => 'required|string|max:255',
+        ]);
+
+        Reempacador::create($request->all());
+
+        return redirect()->route('reempacadores.index')->with('success', 'Reempacador creado correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Reempacador  $reempacador
-     * @return \Illuminate\Http\Response
-     */
     public function show(Reempacador $reempacador)
     {
-        //
+        return view('reempacadores.show', compact('reempacador'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Reempacador  $reempacador
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Reempacador $reempacador)
     {
-        //
+        return view('reempacadores.edit', compact('reempacador'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Reempacador  $reempacador
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Reempacador $reempacador)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'clave' => 'required|string|max:255',
+        ]);
+
+        $reempacador->update($request->all());
+
+        return redirect()->route('reempacadores.index')->with('success', 'Reempacador actualizado correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Reempacador  $reempacador
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Reempacador $reempacador)
     {
-        //
+        $reempacador->delete();
+
+        return redirect()->route('reempacadores.index')->with('success', 'Reempacador eliminado correctamente.');
     }
 }
