@@ -26,3 +26,6 @@ Route::resource('vehiculos', 'VehiculoController');
 Route::resource('transportadoras', 'TransportadoraController');
 Route::resource('bodegas', 'BodegaController');
 Route::resource('reempacadores', 'ReempacadorController');
+Route::resource('mediciones', 'MedicionController');
+Route::resource('observaciones', 'ObservacionController');
+Route::resource('codigosr', 'CodigorController');

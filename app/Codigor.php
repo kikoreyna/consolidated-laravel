@@ -7,4 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Codigor extends Model
 {
     protected $table = 'codigosr';
+
+    protected $fillable = [
+        'nombre',
+        'descripcion',
+    ];
 }

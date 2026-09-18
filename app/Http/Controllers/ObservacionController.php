@@ -7,79 +7,63 @@ use Illuminate\Http\Request;
 
 class ObservacionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        //
+        $observaciones = Observacion::orderBy('id', 'desc')->get();
+
+        return view('observaciones.index', compact('observaciones'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('observaciones.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'contenido' => 'required|string',
+            'user_id' => 'required|integer',
+            'entrada_id' => 'required|integer',
+        ]);
+
+        Observacion::create($request->all());
+
+        return redirect()->route('observaciones.index')->with('success', 'Observación creada correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Observacion  $observacion
-     * @return \Illuminate\Http\Response
-     */
     public function show(Observacion $observacion)
     {
-        //
+        return view('observaciones.show', compact('observacion'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Observacion  $observacion
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Observacion $observacion)
     {
-        //
+        return view('observaciones.edit', compact('observacion'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Observacion  $observacion
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Observacion $observacion)
     {
-        //
+        $request->validate([
+            'contenido' => 'required|string',
+            'user_id' => 'required|integer',
+            'entrada_id' => 'required|integer',
+        ]);
+
+        $observacion->update($request->all());
+
+        return redirect()->route('observaciones.index')->with('success', 'Observación actualizada correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Observacion  $observacion
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Observacion $observacion)
     {
-        //
+        $observacion->delete();
+
+        return redirect()->route('observaciones.index')->with('success', 'Observación eliminada correctamente.');
     }
 }

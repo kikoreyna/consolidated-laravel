@@ -7,79 +7,59 @@ use Illuminate\Http\Request;
 
 class MedicionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
-        //
+        $mediciones = Medicion::orderBy('id', 'desc')->get();
+
+        return view('mediciones.index', compact('mediciones'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('mediciones.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:mediciones,nombre',
+        ]);
+
+        Medicion::create($request->all());
+
+        return redirect()->route('mediciones.index')->with('success', 'Medición creada correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Medicion  $medicion
-     * @return \Illuminate\Http\Response
-     */
     public function show(Medicion $medicion)
     {
-        //
+        return view('mediciones.show', compact('medicion'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Medicion  $medicion
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Medicion $medicion)
     {
-        //
+        return view('mediciones.edit', compact('medicion'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Medicion  $medicion
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Medicion $medicion)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:mediciones,nombre,' . $medicion->id,
+        ]);
+
+        $medicion->update($request->all());
+
+        return redirect()->route('mediciones.index')->with('success', 'Medición actualizada correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Medicion  $medicion
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Medicion $medicion)
     {
-        //
+        $medicion->delete();
+
+        return redirect()->route('mediciones.index')->with('success', 'Medición eliminada correctamente.');
     }
 }
