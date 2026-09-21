@@ -11,6 +11,12 @@ class MedicionesTableSeeder extends Seeder
      */
     public function run()
     {
-        return factory(App\Medicion::class, 3)->create();
+        $mediciones = [];
+
+        foreach (['Inicial', 'Extranjero', 'Nacional'] as $nombre) {
+            $mediciones[] = App\Medicion::firstOrCreate(['nombre' => $nombre]);
+        }
+
+        return $mediciones;
     }
 }

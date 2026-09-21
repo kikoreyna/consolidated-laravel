@@ -11,6 +11,15 @@ class BodegasTableSeeder extends Seeder
      */
     public function run()
     {
-        return factory(App\Bodega::class, 5)->create();
+        $bodegas = [];
+
+        foreach (range(0, 4) as $numero) {
+            $bodegas[] = App\Bodega::firstOrCreate(
+                ['nombre' => 'Bodega ' . $numero],
+                ['descripcion' => 'Bodega de almacenamiento ' . $numero]
+            );
+        }
+
+        return $bodegas;
     }
 }

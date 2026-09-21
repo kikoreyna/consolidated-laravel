@@ -23,7 +23,7 @@
     <div id="app">
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
+                <a class="navbar-brand" href="{{ Auth::check() ? route('home') : url('/') }}">
                     {{ config('app.name', 'Laravel') }}
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
@@ -33,6 +33,40 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
+                        @auth
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
+                                    Inicio
+                                </a>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle {{ request()->routeIs('consolidados.*', 'entradas.*', 'mediciones.*', 'observaciones.*') ? 'active' : '' }}" href="#" id="operacionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Operación
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="operacionDropdown">
+                                    <li><a class="dropdown-item" href="{{ route('consolidados.index') }}">Consolidados</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('entradas.index') }}">Entradas</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('mediciones.index') }}">Mediciones</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('observaciones.index') }}">Observaciones</a></li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle {{ request()->routeIs('clientes.*', 'conductores.*', 'vehiculos.*', 'transportadoras.*', 'bodegas.*', 'reempacadores.*', 'codigosr.*') ? 'active' : '' }}" href="#" id="catalogosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Catálogos
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="catalogosDropdown">
+                                    <li><a class="dropdown-item" href="{{ route('clientes.index') }}">Clientes</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('conductores.index') }}">Conductores</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vehiculos.index') }}">Vehículos</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('transportadoras.index') }}">Transportadoras</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('bodegas.index') }}">Bodegas</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('reempacadores.index') }}">Reempacadores</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('codigosr.index') }}">Códigos R</a></li>
+                                </ul>
+                            </li>
+                        @endauth
 
                     </ul>
 

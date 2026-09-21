@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Consolidado;
+use App\Entrada;
 use Illuminate\Http\Request;
 
 class ConsolidadoController extends Controller
@@ -41,7 +42,11 @@ class ConsolidadoController extends Controller
 
     public function show(Consolidado $consolidado)
     {
-        return view('consolidados.show', compact('consolidado'));
+        $entradas = Entrada::where('consolidado_id', $consolidado->id)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('consolidados.show', compact('consolidado', 'entradas'));
     }
 
     public function edit(Consolidado $consolidado)

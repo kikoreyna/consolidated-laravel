@@ -17,7 +17,6 @@
                 <thead>
                     <tr>
                         <th>Número</th>
-                        <th>Cliente ID</th>
                         <th>Consolidado</th>
                         <th>Vuelta</th>
                         <th>Recibido</th>
@@ -27,9 +26,20 @@
                 <tbody>
                     @forelse($entradas as $entrada)
                         <tr>
-                            <td>{{ $entrada->numero }}</td>
-                            <td>{{ $entrada->cliente_id }}</td>
-                            <td>{{ $entrada->consolidado_id ?? 'N/A' }}</td>
+                            <td>
+                                <a href="{{ route('entradas.show', $entrada) }}">
+                                    {{ $entrada->numero }}
+                                </a>
+                            </td>
+                            <td>
+                                @if($entrada->consolidado_id)
+                                    <a href="{{ route('consolidados.show', $entrada->consolidado_id) }}">
+                                        {{ $entrada->consolidado_id }}
+                                    </a>
+                                @else
+                                    N/A
+                                @endif
+                            </td>
                             <td>{{ $entrada->vuelta ?? 'N/A' }}</td>
                             <td>{{ $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d H:i') : 'N/A' }}</td>
                             <td>
@@ -44,7 +54,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center">No hay entradas registradas.</td>
+                            <td colspan="5" class="text-center">No hay entradas registradas.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -21,7 +21,8 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::resource('clientes', 'ClienteController');
 Route::resource('consolidados', 'ConsolidadoController');
 Route::resource('entradas', 'EntradaController');
-Route::resource('conductores', 'ConductorController');
+Route::resource('conductores', 'ConductorController')
+    ->parameters(['conductores' => 'conductor']);
 Route::resource('vehiculos', 'VehiculoController');
 Route::resource('transportadoras', 'TransportadoraController');
 Route::resource('bodegas', 'BodegaController');

@@ -26,7 +26,11 @@
                 <tbody>
                     @forelse($consolidados as $consolidado)
                         <tr>
-                            <td>{{ $consolidado->numero }}</td>
+                            <td>
+                                <a href="{{ route('consolidados.show', $consolidado) }}">
+                                    {{ $consolidado->numero }}
+                                </a>
+                            </td>
                             <td>{{ $consolidado->palets }}</td>
                             <td>{{ $consolidado->cliente_id }}</td>
                             <td>{{ $consolidado->notificacion ? $consolidado->notificacion->format('Y-m-d H:i') : 'N/A' }}</td>

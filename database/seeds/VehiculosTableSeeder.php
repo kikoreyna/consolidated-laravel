@@ -11,6 +11,15 @@ class VehiculosTableSeeder extends Seeder
      */
     public function run()
     {
-        return factory(App\Vehiculo::class, 10)->create();
+        $vehiculos = [];
+
+        foreach (range(0, 9) as $numero) {
+            $vehiculos[] = App\Vehiculo::firstOrCreate(
+                ['alias' => 'Vehiculo - ' . $numero],
+                ['descripcion' => 'Vehiculo de transporte ' . $numero]
+            );
+        }
+
+        return $vehiculos;
     }
 }
