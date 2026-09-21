@@ -30,3 +30,6 @@ Route::resource('reempacadores', 'ReempacadorController');
 Route::resource('mediciones', 'MedicionController');
 Route::resource('observaciones', 'ObservacionController');
 Route::resource('codigosr', 'CodigorController');
+Route::resource('remitentes', 'RemitenteController');
+Route::resource('destinatarios', 'DestinatarioController');
+Route::resource('oficinas', 'OficinaController');

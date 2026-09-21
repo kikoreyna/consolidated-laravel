@@ -1,0 +1,2 @@
+@extends('layouts.app')
+@section('content')<div class="container"><h2>Editar remitente</h2><form action="{{ route('remitentes.update', $remitente) }}" method="POST">@csrf @method('PUT') @include('remitentes._form') @include('layouts.validation')<button class="btn btn-primary">Actualizar</button> <a href="{{ route('remitentes.index') }}" class="btn btn-secondary">Cancelar</a></form></div>@endsection

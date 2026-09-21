@@ -18,6 +18,9 @@
                     <tr>
                         <th>Número</th>
                         <th>Consolidado</th>
+                        <th>Remitente</th>
+                        <th>Destinatario</th>
+                        <th>Entrega</th>
                         <th>Vuelta</th>
                         <th>Recibido</th>
                         <th>Acciones</th>
@@ -32,14 +35,17 @@
                                 </a>
                             </td>
                             <td>
-                                @if($entrada->consolidado_id)
-                                    <a href="{{ route('consolidados.show', $entrada->consolidado_id) }}">
-                                        {{ $entrada->consolidado_id }}
+                                @if($entrada->consolidado)
+                                    <a href="{{ route('consolidados.show', $entrada->consolidado) }}">
+                                        {{ $entrada->consolidado->numero }}
                                     </a>
                                 @else
-                                    N/A
+                                    Sin consolidar
                                 @endif
                             </td>
+                            <td>{{ optional($entrada->remitente)->nombre ?? 'N/A' }}</td>
+                            <td>{{ optional($entrada->destinatario)->nombre ?? 'N/A' }}</td>
+                            <td>{{ $entrada->modalidad_entrega === 'ocurre' ? 'A ocurre' : ($entrada->modalidad_entrega === 'domicilio' ? 'A domicilio' : 'Sin definir') }}</td>
                             <td>{{ $entrada->vuelta ?? 'N/A' }}</td>
                             <td>{{ $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d H:i') : 'N/A' }}</td>
                             <td>
@@ -54,7 +60,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center">No hay entradas registradas.</td>
+                            <td colspan="8" class="text-center">No hay entradas registradas.</td>
                         </tr>
                     @endforelse
                 </tbody>

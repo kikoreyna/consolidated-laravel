@@ -53,7 +53,7 @@
                             </li>
 
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle {{ request()->routeIs('clientes.*', 'conductores.*', 'vehiculos.*', 'transportadoras.*', 'bodegas.*', 'reempacadores.*', 'codigosr.*') ? 'active' : '' }}" href="#" id="catalogosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle {{ request()->routeIs('clientes.*', 'conductores.*', 'vehiculos.*', 'transportadoras.*', 'bodegas.*', 'reempacadores.*', 'codigosr.*', 'remitentes.*', 'destinatarios.*', 'oficinas.*') ? 'active' : '' }}" href="#" id="catalogosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Catálogos
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="catalogosDropdown">
@@ -64,6 +64,10 @@
                                     <li><a class="dropdown-item" href="{{ route('bodegas.index') }}">Bodegas</a></li>
                                     <li><a class="dropdown-item" href="{{ route('reempacadores.index') }}">Reempacadores</a></li>
                                     <li><a class="dropdown-item" href="{{ route('codigosr.index') }}">Códigos R</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('remitentes.index') }}">Remitentes</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('destinatarios.index') }}">Destinatarios</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('oficinas.index') }}">Oficinas</a></li>
                                 </ul>
                             </li>
                         @endauth

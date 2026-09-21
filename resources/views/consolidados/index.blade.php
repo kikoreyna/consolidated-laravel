@@ -18,7 +18,7 @@
                     <tr>
                         <th>Número</th>
                         <th>Palets</th>
-                        <th>Cliente ID</th>
+                        <th>Cliente</th>
                         <th>Notificación</th>
                         <th>Acciones</th>
                     </tr>
@@ -32,7 +32,7 @@
                                 </a>
                             </td>
                             <td>{{ $consolidado->palets }}</td>
-                            <td>{{ $consolidado->cliente_id }}</td>
+                            <td>{{ optional($consolidado->cliente)->nombre ?? 'Sin cliente' }}</td>
                             <td>{{ $consolidado->notificacion ? $consolidado->notificacion->format('Y-m-d H:i') : 'N/A' }}</td>
                             <td>
                                 <a href="{{ route('consolidados.show', $consolidado) }}" class="btn btn-sm btn-info">Ver</a>

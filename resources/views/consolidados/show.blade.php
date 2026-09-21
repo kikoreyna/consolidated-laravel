@@ -8,7 +8,7 @@
         <div class="card-body">
             <p><strong>Número:</strong> {{ $consolidado->numero }}</p>
             <p><strong>Palets:</strong> {{ $consolidado->palets }}</p>
-            <p><strong>Cliente ID:</strong> {{ $consolidado->cliente_id }}</p>
+            <p><strong>Cliente:</strong> {{ optional($consolidado->cliente)->nombre ?? 'Sin cliente' }}</p>
             <p><strong>Cliente alias número:</strong> {{ $consolidado->cliente_alias_numero ? 'Sí' : 'No' }}</p>
             <p><strong>Notificación:</strong> {{ $consolidado->notificacion ? $consolidado->notificacion->format('Y-m-d H:i') : 'N/A' }}</p>
         </div>
@@ -24,7 +24,7 @@
                     <thead>
                         <tr>
                             <th>Número</th>
-                            <th>Cliente ID</th>
+                            <th>Cliente</th>
                             <th>Vuelta</th>
                             <th>Recibido</th>
                             <th>Acciones</th>
@@ -34,7 +34,7 @@
                         @forelse($entradas as $entrada)
                             <tr>
                                 <td>{{ $entrada->numero }}</td>
-                                <td>{{ $entrada->cliente_id }}</td>
+                                <td>{{ optional($entrada->cliente)->nombre ?? 'Sin cliente' }}</td>
                                 <td>{{ $entrada->vuelta ?? 'N/A' }}</td>
                                 <td>{{ $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d H:i') : 'N/A' }}</td>
                                 <td>

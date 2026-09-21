@@ -14,4 +14,9 @@ class Transportadora extends Model
         'telefono',
         'notas',
     ];
+
+    public function oficinas()
+    {
+        return $this->hasMany(Oficina::class, 'transportadora_id');
+    }
 }

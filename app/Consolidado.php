@@ -20,4 +20,14 @@ class Consolidado extends Model
         'cliente_alias_numero' => 'boolean',
         'notificacion' => 'datetime',
     ];
+
+    public function entradas()
+    {
+        return $this->hasMany(Entrada::class, 'consolidado_id');
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
 }

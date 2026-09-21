@@ -18,8 +18,13 @@
                 <input type="number" name="palets" class="form-control" value="{{ old('palets', $consolidado->palets) }}" min="0">
             </div>
             <div class="col-md-6 mb-3">
-                <label>Cliente ID</label>
-                <input type="number" name="cliente_id" class="form-control" value="{{ old('cliente_id', $consolidado->cliente_id) }}" required>
+                <label for="cliente_id">Cliente</label>
+                <select id="cliente_id" name="cliente_id" class="form-control" required>
+                    <option value="">Selecciona un cliente</option>
+                    @foreach($clientes as $cliente)
+                        <option value="{{ $cliente->id }}" {{ old('cliente_id', $consolidado->cliente_id) == $cliente->id ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-6 mb-3">
                 <label>Notificación</label>

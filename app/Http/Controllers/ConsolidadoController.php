@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Consolidado;
 use App\Entrada;
+use App\Cliente;
 use Illuminate\Http\Request;
 
 class ConsolidadoController extends Controller
@@ -15,14 +16,16 @@ class ConsolidadoController extends Controller
 
     public function index()
     {
-        $consolidados = Consolidado::orderBy('id', 'desc')->get();
+        $consolidados = Consolidado::with('cliente')->orderBy('id', 'desc')->get();
 
         return view('consolidados.index', compact('consolidados'));
     }
 
     public function create()
     {
-        return view('consolidados.create');
+        $clientes = Cliente::orderBy('nombre')->get();
+
+        return view('consolidados.create', compact('clientes'));
     }
 
     public function store(Request $request)
@@ -30,7 +33,7 @@ class ConsolidadoController extends Controller
         $request->validate([
             'numero' => 'required|string|max:255',
             'palets' => 'nullable|integer|min:0',
-            'cliente_id' => 'required|integer',
+            'cliente_id' => 'required|integer|exists:clientes,id',
             'cliente_alias_numero' => 'nullable|boolean',
             'notificacion' => 'nullable|date',
         ]);
@@ -42,7 +45,8 @@ class ConsolidadoController extends Controller
 
     public function show(Consolidado $consolidado)
     {
-        $entradas = Entrada::where('consolidado_id', $consolidado->id)
+        $consolidado->load('cliente');
+        $entradas = Entrada::with('cliente')->where('consolidado_id', $consolidado->id)
             ->orderBy('id', 'desc')
             ->get();
 
@@ -51,7 +55,9 @@ class ConsolidadoController extends Controller
 
     public function edit(Consolidado $consolidado)
     {
-        return view('consolidados.edit', compact('consolidado'));
+        $clientes = Cliente::orderBy('nombre')->get();
+
+        return view('consolidados.edit', compact('consolidado', 'clientes'));
     }
 
     public function update(Request $request, Consolidado $consolidado)
@@ -59,7 +65,7 @@ class ConsolidadoController extends Controller
         $request->validate([
             'numero' => 'required|string|max:255',
             'palets' => 'nullable|integer|min:0',
-            'cliente_id' => 'required|integer',
+            'cliente_id' => 'required|integer|exists:clientes,id',
             'cliente_alias_numero' => 'nullable|boolean',
             'notificacion' => 'nullable|date',
         ]);

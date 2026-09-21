@@ -13,4 +13,14 @@ class Observacion extends Model
         'user_id',
         'entrada_id',
     ];
+    
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    
+    public function entrada()
+    {
+        return $this->belongsTo(Entrada::class, 'entrada_id');
+    }
 }

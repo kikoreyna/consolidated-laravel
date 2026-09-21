@@ -15,11 +15,21 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label>Usuario</label>
-                <input type="number" name="user_id" class="form-control" value="{{ old('user_id', $observacion->user_id) }}" required>
+                <select name="user_id" class="form-control" required>
+                    <option value="">Selecciona un usuario</option>
+                    @foreach($usuarios as $usuario)
+                        <option value="{{ $usuario->id }}" {{ old('user_id', $observacion->user_id) == $usuario->id ? 'selected' : '' }}>{{ $usuario->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-6 mb-3">
                 <label>Entrada</label>
-                <input type="number" name="entrada_id" class="form-control" value="{{ old('entrada_id', $observacion->entrada_id) }}" required>
+                <select name="entrada_id" class="form-control" required>
+                    <option value="">Selecciona una entrada</option>
+                    @foreach($entradas as $entrada)
+                        <option value="{{ $entrada->id }}" {{ old('entrada_id', $observacion->entrada_id) == $entrada->id ? 'selected' : '' }}>{{ $entrada->numero }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 

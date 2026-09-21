@@ -26,8 +26,8 @@
                     @forelse($observaciones as $observacion)
                         <tr>
                             <td>{{ Str::limit($observacion->contenido, 80) }}</td>
-                            <td>{{ $observacion->user_id }}</td>
-                            <td>{{ $observacion->entrada_id }}</td>
+                            <td>{{ optional($observacion->user)->name ?? 'Usuario no disponible' }}</td>
+                            <td>{{ optional($observacion->entrada)->numero ?? 'Entrada no disponible' }}</td>
                             <td>
                                 <a href="{{ route('observaciones.show', $observacion) }}" class="btn btn-sm btn-info">Ver</a>
                                 <a href="{{ route('observaciones.edit', $observacion) }}" class="btn btn-sm btn-warning">Editar</a>

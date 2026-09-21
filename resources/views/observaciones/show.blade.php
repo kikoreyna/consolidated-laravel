@@ -7,8 +7,8 @@
     <div class="card">
         <div class="card-body">
             <p><strong>Contenido:</strong> {{ $observacion->contenido }}</p>
-            <p><strong>Usuario:</strong> {{ $observacion->user_id }}</p>
-            <p><strong>Entrada:</strong> {{ $observacion->entrada_id }}</p>
+            <p><strong>Usuario:</strong> {{ optional($observacion->user)->name ?? 'Usuario no disponible' }}</p>
+            <p><strong>Entrada:</strong> {{ optional($observacion->entrada)->numero ?? 'Entrada no disponible' }}</p>
         </div>
     </div>
 

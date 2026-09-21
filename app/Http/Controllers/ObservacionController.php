@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Observacion;
+use App\Entrada;
+use App\User;
 use Illuminate\Http\Request;
 
 class ObservacionController extends Controller
@@ -14,22 +16,22 @@ class ObservacionController extends Controller
 
     public function index()
     {
-        $observaciones = Observacion::orderBy('id', 'desc')->get();
+        $observaciones = Observacion::with(['user', 'entrada'])->orderBy('id', 'desc')->get();
 
         return view('observaciones.index', compact('observaciones'));
     }
 
     public function create()
     {
-        return view('observaciones.create');
+        return view('observaciones.create', $this->catalogos());
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'contenido' => 'required|string',
-            'user_id' => 'required|integer',
-            'entrada_id' => 'required|integer',
+            'user_id' => 'required|integer|exists:users,id',
+            'entrada_id' => 'required|integer|exists:entradas,id',
         ]);
 
         Observacion::create($request->all());
@@ -39,20 +41,22 @@ class ObservacionController extends Controller
 
     public function show(Observacion $observacion)
     {
+        $observacion->load(['user', 'entrada']);
+
         return view('observaciones.show', compact('observacion'));
     }
 
     public function edit(Observacion $observacion)
     {
-        return view('observaciones.edit', compact('observacion'));
+        return view('observaciones.edit', array_merge(['observacion' => $observacion], $this->catalogos()));
     }
 
     public function update(Request $request, Observacion $observacion)
     {
         $request->validate([
             'contenido' => 'required|string',
-            'user_id' => 'required|integer',
-            'entrada_id' => 'required|integer',
+            'user_id' => 'required|integer|exists:users,id',
+            'entrada_id' => 'required|integer|exists:entradas,id',
         ]);
 
         $observacion->update($request->all());
@@ -65,5 +69,13 @@ class ObservacionController extends Controller
         $observacion->delete();
 
         return redirect()->route('observaciones.index')->with('success', 'Observación eliminada correctamente.');
+    }
+
+    private function catalogos()
+    {
+        return [
+            'usuarios' => User::orderBy('name')->get(),
+            'entradas' => Entrada::orderBy('numero')->get(),
+        ];
     }
 }
