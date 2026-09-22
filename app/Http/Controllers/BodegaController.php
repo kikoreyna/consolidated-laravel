@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Bodega;
+use App\Entrada;
 use Illuminate\Http\Request;
 
 class BodegaController extends Controller
@@ -17,6 +18,25 @@ class BodegaController extends Controller
         $bodegas = Bodega::orderBy('id', 'desc')->get();
 
         return view('bodegas.index', compact('bodegas'));
+    }
+
+    public function usa()
+    {
+        $entradas = Entrada::with(['cliente', 'consolidado'])
+            ->whereHas('bodega', function ($query) {
+                $query->where('codigo', 'USA');
+            })
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('bodegas.usa', compact('entradas'));
+    }
+
+    public function cambiarModo()
+    {
+        session()->forget(['usa_pendiente', 'usa_scan_action']);
+
+        return redirect()->route('bodega-usa');
     }
 
     public function create()

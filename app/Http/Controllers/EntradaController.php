@@ -17,6 +17,7 @@ use App\Oficina;
 use App\Bodega;
 use App\EntradaMovimiento;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class EntradaController extends Controller
 {
@@ -39,50 +40,69 @@ class EntradaController extends Controller
         $data = $request->validate([
             'numero' => 'required|string|max:255',
             'accion' => 'required|in:solo_recibido,solo_pesar,pesar_medir',
-            'peso_usa' => 'nullable|numeric|min:0',
-            'largo_usa' => 'nullable|numeric|min:0',
-            'ancho_usa' => 'nullable|numeric|min:0',
-            'alto_usa' => 'nullable|numeric|min:0',
             'observacion' => 'nullable|string',
+            'incidente' => 'nullable|in:sin_incidente,dano_embalaje,empaque_danado,faltante,excedente,diferencia_peso,guia_ilegible,otro',
         ]);
 
-        $entrada = Entrada::with('bodega')->where('numero', $data['numero'])->firstOrFail();
+        $entrada = $this->findOrCreateUsaEntry($data['numero']);
+
+        if (!$entrada->bodega_id) {
+            $bodegaUsa = $this->usaBodegaForUser();
+            $entrada->update(['bodega_id' => $bodegaUsa->id]);
+            $entrada->load('bodega');
+            $this->logMovement($entrada, 'asignada_bodega_usa', 'Guía existente asignada a bodega USA por escaneo.');
+        }
+
         $this->authorizeEntry($entrada);
 
         if (!$entrada->bodega || strtoupper((string) $entrada->bodega->codigo) !== 'USA') {
             abort(422, 'La guía no está asignada a una bodega USA.');
         }
 
-        if ($data['accion'] === 'solo_pesar' && empty($data['peso_usa'])) {
-            abort(422, 'El peso es obligatorio para esta operación.');
+        session()->flash('usa_datos_cliente', $this->clientMeasurements($entrada));
+
+        if ($data['accion'] === 'solo_recibido') {
+            $this->completeUsaControl($entrada, $data['accion'], $data);
+            session(['usa_scan_action' => $data['accion']]);
+            return redirect()->route('bodega-usa')->with('success', 'Guía recibida correctamente.');
         }
 
-        if ($data['accion'] === 'pesar_medir' && (empty($data['peso_usa']) || empty($data['largo_usa']) || empty($data['ancho_usa']) || empty($data['alto_usa']))) {
-            abort(422, 'Peso, largo, ancho y alto son obligatorios para pesar y medir.');
+        session(['usa_pendiente' => [
+            'entrada_id' => $entrada->id,
+            'numero' => $entrada->numero,
+            'accion' => $data['accion'],
+            'incidente' => $data['incidente'] ?? 'sin_incidente',
+        ]]);
+
+        return redirect()->route('bodega-usa');
+    }
+
+    public function completeControlUsa(Request $request)
+    {
+        $data = $request->validate([
+            'entrada_id' => 'required|integer|exists:entradas,id',
+            'accion' => 'required|in:solo_pesar,pesar_medir',
+            'peso_usa' => 'required|numeric|min:0',
+            'largo_usa' => 'nullable|numeric|min:0',
+            'ancho_usa' => 'nullable|numeric|min:0',
+            'alto_usa' => 'nullable|numeric|min:0',
+            'observacion' => 'nullable|string',
+            'incidente' => 'nullable|in:sin_incidente,dano_embalaje,empaque_danado,faltante,excedente,diferencia_peso,guia_ilegible,otro',
+        ]);
+
+        $entrada = Entrada::with('bodega')->findOrFail($data['entrada_id']);
+        $this->authorizeEntry($entrada);
+
+        if ($data['accion'] === 'pesar_medir' && (empty($data['largo_usa']) || empty($data['ancho_usa']) || empty($data['alto_usa']))) {
+            abort(422, 'Largo, ancho y alto son obligatorios para pesar y medir.');
         }
 
-        $update = [
-            'recibido_usa_at' => now(),
-            'recibido_usa_por' => auth()->id(),
-            'control_usa_tipo' => $data['accion'],
-            'control_usa_completado_at' => now(),
-            'control_usa_completado_por' => auth()->id(),
-        ];
+        $data['incidente'] = $data['incidente'] ?: session('usa_pendiente.incidente', 'sin_incidente');
+        $this->completeUsaControl($entrada, $data['accion'], $data);
+        session()->forget('usa_pendiente');
+        session(['usa_scan_action' => $data['accion']]);
 
-        foreach (['peso_usa', 'largo_usa', 'ancho_usa', 'alto_usa'] as $campo) {
-            if (array_key_exists($campo, $data) && $data[$campo] !== null) {
-                $update[$campo] = $data[$campo];
-            }
-        }
-
-        if ($data['accion'] === 'pesar_medir') {
-            $update['volumen_usa'] = $data['largo_usa'] * $data['ancho_usa'] * $data['alto_usa'];
-        }
-
-        $entrada->update($update);
-        $this->logMovement($entrada, $data['accion'], $data['observacion'] ?? 'Control USA completado');
-
-        return redirect()->route('entradas.index')->with('success', 'Control USA registrado para la guía ' . $entrada->numero . '.');
+        return redirect()->route('bodega-usa')->with('success', 'Control USA registrado para la guía ' . $entrada->numero . '.');
     }
 
     public function create()
@@ -158,6 +178,73 @@ class EntradaController extends Controller
         return view('entradas.edit', array_merge(['entrada' => $entrada], $catalogos));
     }
 
+    public function editSalida(Entrada $entrada)
+    {
+        $this->authorizeOperationalAccess();
+        $this->authorizeEntry($entrada);
+
+        if (!$entrada->destinatario_confirmado) {
+            return redirect()->route('entradas.show', $entrada)
+                ->with('error', 'Verifica primero el destinatario para capturar la salida.');
+        }
+
+        return view('entradas.salida-edit', [
+            'entrada' => $entrada,
+            'transportadoras' => Transportadora::orderBy('nombre')->get(),
+            'oficinas' => Oficina::where('activa', true)->with('transportadora')->orderBy('nombre')->get(),
+        ]);
+    }
+
+    public function updateSalida(Request $request, Entrada $entrada)
+    {
+        $this->authorizeOperationalAccess();
+        $this->authorizeEntry($entrada);
+
+        if (!$entrada->destinatario_confirmado) {
+            abort(422, 'Verifica primero el destinatario para capturar la salida.');
+        }
+
+        $data = $request->validate([
+            'codigo_rastreo' => 'nullable|string|max:255',
+            'codigo_confirmacion' => 'nullable|string|max:255',
+            'transportadora_id' => 'nullable|integer|exists:transportadoras,id',
+            'modalidad_entrega' => 'nullable|in:domicilio,ocurre',
+            'oficina_id' => 'nullable|integer|exists:oficinas,id',
+            'status_salida' => 'nullable|string|max:100',
+            'incidente_salida' => 'nullable|string|max:255',
+            'notas_salida' => 'nullable|string',
+        ]);
+
+        $data['modalidad_entrega'] = $data['modalidad_entrega'] ?? 'domicilio';
+
+        if ($data['modalidad_entrega'] === 'ocurre') {
+            if (empty($data['transportadora_id']) || empty($data['oficina_id'])) {
+                throw ValidationException::withMessages([
+                    'oficina_id' => 'Selecciona una transportadora y una oficina para la cobertura ocurre.',
+                ]);
+            }
+
+            $oficinaValida = Oficina::whereKey($data['oficina_id'])
+                ->where('transportadora_id', $data['transportadora_id'])
+                ->where('activa', true)
+                ->exists();
+
+            if (!$oficinaValida) {
+                throw ValidationException::withMessages([
+                    'oficina_id' => 'La oficina seleccionada no pertenece a la transportadora elegida.',
+                ]);
+            }
+        } else {
+            $data['oficina_id'] = null;
+        }
+
+        $data['updated_by'] = auth()->id();
+        $entrada->update($data);
+        $this->logMovement($entrada, 'salida_actualizada', 'Datos de salida actualizados.');
+
+        return redirect()->route('entradas.show', $entrada)->with('success', 'Datos de salida actualizados.');
+    }
+
     public function update(Request $request, Entrada $entrada)
     {
         $this->authorizeOperationalAccess();
@@ -197,6 +284,9 @@ class EntradaController extends Controller
             'reempacado_at',
         ]);
         $destinatarioCambio = (int) $entrada->destinatario_id !== (int) ($data['destinatario_id'] ?? 0);
+        $bodegaAnterior = $entrada->bodega_id;
+        $bodegaNueva = $data['bodega_id'] ?? null;
+        $bodegaCambio = (string) $bodegaAnterior !== (string) $bodegaNueva;
         $confirmado = $request->boolean('destinatario_confirmado');
 
         $data['updated_by'] = auth()->id();
@@ -237,7 +327,13 @@ class EntradaController extends Controller
         if ($nuevoReempacado) {
             $this->logMovement($entrada, 'reempacado', 'Guía reempacada');
         }
-        if ($cambios && !$nuevoRecibidoUsa && !$nuevoRecibidoMexico && !$nuevoReempacado) {
+        if ($bodegaCambio) {
+            $this->logMovement($entrada, 'traslado_bodega', 'Guía trasladada a otra bodega.', [
+                'bodega_anterior_id' => $bodegaAnterior,
+                'bodega_nueva_id' => $bodegaNueva,
+            ]);
+        }
+        if ($cambios && !$nuevoRecibidoUsa && !$nuevoRecibidoMexico && !$nuevoReempacado && !$bodegaCambio) {
             $this->logMovement($entrada, 'actualizada', 'Datos de la guía actualizados');
         }
 
@@ -281,6 +377,10 @@ class EntradaController extends Controller
         }
 
         if (in_array($user->rol, ['documentador', 'supervisor'], true)) {
+            return $query->whereIn('bodega_id', $user->bodegas()->pluck('bodegas.id'));
+        }
+
+        if ($user->rol === 'bodega_usa') {
             return $query->whereIn('bodega_id', $user->bodegas()->pluck('bodegas.id'));
         }
 
@@ -328,7 +428,102 @@ class EntradaController extends Controller
         }
     }
 
-    private function logMovement(Entrada $entrada, $tipo, $observacion)
+    private function findOrCreateUsaEntry($numero)
+    {
+        $entrada = Entrada::with('bodega')->where('numero', $numero)->first();
+
+        if ($entrada) {
+            return $entrada;
+        }
+
+        $bodegaUsa = $this->usaBodegaForUser();
+
+        $entrada = Entrada::create([
+            'numero' => $numero,
+            'alias_cliente_numero' => false,
+            'cliente_id' => null,
+            'consolidado_id' => null,
+            'bodega_id' => $bodegaUsa->id,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]);
+        $entrada->load('bodega');
+        $this->logMovement($entrada, 'creada_sin_consolidar', 'Guía no existente registrada por escaneo.');
+
+        return $entrada;
+    }
+
+    private function usaBodegaForUser()
+    {
+        $bodegaUsa = Bodega::where('codigo', 'USA')
+            ->whereIn('id', auth()->user()->bodegas()->pluck('bodegas.id'))
+            ->first();
+
+        if (!$bodegaUsa && in_array(auth()->user()->rol, ['supervisor', 'administrador', 'superadministrador'], true)) {
+            $bodegaUsa = Bodega::firstOrCreate(
+                ['codigo' => 'USA'],
+                [
+                    'nombre' => 'Bodega USA',
+                    'descripcion' => 'Bodega de recepción y control en Estados Unidos.',
+                    'pais' => 'USA',
+                    'activa' => true,
+                    'control_usa' => 'solo_recibido',
+                ]
+            );
+        }
+
+        if (!$bodegaUsa) {
+            abort(422, 'No tienes una bodega USA asignada para registrar esta guía.');
+        }
+
+        return $bodegaUsa;
+    }
+
+    private function completeUsaControl(Entrada $entrada, $accion, array $data = [])
+    {
+        $update = [
+            'recibido_usa_at' => now(),
+            'recibido_usa_por' => auth()->id(),
+            'control_usa_tipo' => $accion,
+            'control_usa_completado_at' => now(),
+            'control_usa_completado_por' => auth()->id(),
+        ];
+
+        foreach (['peso_usa', 'largo_usa', 'ancho_usa', 'alto_usa'] as $campo) {
+            if (array_key_exists($campo, $data)) {
+                $update[$campo] = $data[$campo];
+            }
+        }
+
+        if ($accion === 'pesar_medir') {
+            $update['volumen_usa'] = $data['largo_usa'] * $data['ancho_usa'] * $data['alto_usa'];
+        }
+
+        $entrada->update($update);
+        $incidentText = $data['incidente'] ?? 'sin_incidente';
+        $this->logMovement($entrada, $accion, $data['observacion'] ?? 'Control USA completado', [
+            'incidente' => $incidentText,
+            'peso_lb' => $data['peso_usa'] ?? null,
+            'largo_in' => $data['largo_usa'] ?? null,
+            'ancho_in' => $data['ancho_usa'] ?? null,
+            'alto_in' => $data['alto_usa'] ?? null,
+            'volumen_in3' => $entrada->volumen_usa,
+        ]);
+    }
+
+    private function clientMeasurements(Entrada $entrada)
+    {
+        return [
+            'numero' => $entrada->numero,
+            'peso' => $entrada->peso_cliente,
+            'largo' => $entrada->largo_cliente,
+            'ancho' => $entrada->ancho_cliente,
+            'alto' => $entrada->alto_cliente,
+            'volumen' => $entrada->volumen_cliente,
+        ];
+    }
+
+    private function logMovement(Entrada $entrada, $tipo, $observacion, array $datos = [])
     {
         EntradaMovimiento::create([
             'entrada_id' => $entrada->id,
@@ -345,7 +540,7 @@ class EntradaController extends Controller
             'datos' => [
                 'numero' => $entrada->numero,
                 'modalidad_entrega' => $entrada->modalidad_entrega,
-            ],
+            ] + $datos,
         ]);
     }
 }

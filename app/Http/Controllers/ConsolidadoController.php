@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Consolidado;
-use App\Entrada;
 use App\Cliente;
-use App\EntradaMovimiento;
+use App\Consolidado;
 use App\ConsolidadoMovimiento;
+use App\Entrada;
+use App\EntradaMovimiento;
+use App\Remitente;
+use App\Destinatario;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -45,6 +48,22 @@ class ConsolidadoController extends Controller
         return view('consolidados.import', compact('consolidado'));
     }
 
+    public function entradaForm(Consolidado $consolidado)
+    {
+        $this->authorizeOperationalAccess();
+        $this->authorizeConsolidado($consolidado);
+
+        if ($consolidado->cerrado) {
+            abort(422, 'El consolidado está cerrado y no puede recibir nuevas guías.');
+        }
+
+        return view('consolidados.entrada', [
+            'consolidado' => $consolidado,
+            'remitentes' => Remitente::where('activo', true)->orderBy('nombre')->get(),
+            'destinatarios' => Destinatario::where('activo', true)->orderBy('nombre')->get(),
+        ]);
+    }
+
     public function importCsv(Request $request, Consolidado $consolidado)
     {
         $this->authorizeOperationalAccess();
@@ -55,12 +74,10 @@ class ConsolidadoController extends Controller
         }
 
         $request->validate(['archivo' => 'required|file|mimes:csv,txt|max:10240']);
-
         $handle = fopen($request->file('archivo')->getRealPath(), 'r');
-        $headers = fgetcsv($handle);
         $headers = array_map(function ($header) {
-            return strtolower(trim((string) $header));
-        }, $headers ?: []);
+            return $this->normalizeCsvHeader($header);
+        }, fgetcsv($handle) ?: []);
         $required = ['entrada_numero'];
 
         if (count(array_diff($required, $headers)) > 0) {
@@ -72,10 +89,10 @@ class ConsolidadoController extends Controller
         $line = 1;
         while (($values = fgetcsv($handle)) !== false) {
             $line++;
-            if (count(array_filter($values, 'strlen')) === 0) {
+            $row = array_combine($headers, array_pad($values, count($headers), null));
+            if ($this->csvValue($row, 'entrada_numero') === null) {
                 continue;
             }
-            $row = array_combine($headers, array_pad($values, count($headers), null));
             $row['_line'] = $line;
             $rows[] = $row;
         }
@@ -86,13 +103,17 @@ class ConsolidadoController extends Controller
         }
 
         DB::transaction(function () use ($rows, $consolidado) {
+            $numeros = [];
             foreach ($rows as $row) {
-                if (isset($row['cliente_id']) && $row['cliente_id'] !== '' && (int) $row['cliente_id'] !== (int) $consolidado->cliente_id) {
+                $cliente = $this->csvValue($row, 'cliente_id');
+                if ($cliente !== null && (int) $cliente !== (int) $consolidado->cliente_id) {
                     throw ValidationException::withMessages(['archivo' => 'La fila ' . $row['_line'] . ' pertenece a otro cliente.']);
                 }
-                if (!$row['entrada_numero'] || Entrada::where('numero', trim($row['entrada_numero']))->exists()) {
+                $numero = $this->csvValue($row, 'entrada_numero');
+                if ($numero === null || isset($numeros[$numero]) || Entrada::where('numero', $numero)->exists()) {
                     throw ValidationException::withMessages(['archivo' => 'Número de entrada inválido o duplicado en la fila ' . $row['_line'] . '.']);
                 }
+                $numeros[$numero] = true;
             }
 
             ConsolidadoMovimiento::create([
@@ -105,20 +126,52 @@ class ConsolidadoController extends Controller
             ]);
 
             foreach ($rows as $row) {
+                $remitenteId = $this->csvValue($row, 'remitente_id');
+                if (!$remitenteId && $this->csvValue($row, 'remitente_nombre')) {
+                    $remitenteId = Remitente::create([
+                        'nombre' => $this->csvValue($row, 'remitente_nombre'),
+                        'telefono' => $this->csvValue($row, 'remitente_telefono'),
+                        'direccion' => $this->csvValue($row, 'remitente_direccion'),
+                        'codigo_postal' => $this->csvValue($row, 'remitente_codigo_postal'),
+                        'ciudad' => $this->csvValue($row, 'remitente_ciudad'),
+                        'estado' => $this->csvValue($row, 'remitente_estado'),
+                        'pais' => $this->csvValue($row, 'remitente_pais'),
+                        'activo' => true,
+                    ])->id;
+                }
+                $destinatarioId = $this->csvValue($row, 'destinatario_id');
+                if (!$destinatarioId && $this->csvValue($row, 'destinatario_nombre')) {
+                    $destinatarioId = Destinatario::create([
+                        'nombre' => $this->csvValue($row, 'destinatario_nombre'),
+                        'telefono' => $this->csvValue($row, 'destinatario_telefono'),
+                        'direccion' => $this->csvValue($row, 'destinatario_direccion'),
+                        'codigo_postal' => $this->csvValue($row, 'destinatario_codigo_postal'),
+                        'referencias' => $this->csvValue($row, 'destinatario_referencias'),
+                        'ciudad' => $this->csvValue($row, 'destinatario_ciudad'),
+                        'estado' => $this->csvValue($row, 'destinatario_estado'),
+                        'pais' => $this->csvValue($row, 'destinatario_pais'),
+                        'activo' => true,
+                    ])->id;
+                }
                 $entrada = Entrada::create([
-                    'numero' => trim($row['entrada_numero']),
-                    'alias' => $row['alias'] ?? null,
-                    'alias_cliente_numero' => filter_var($row['alias_cliente_numero'] ?? false, FILTER_VALIDATE_BOOLEAN),
-                    'observaciones' => $row['observaciones'] ?? null,
+                    'numero' => $this->csvValue($row, 'entrada_numero'),
+                    'alias' => $this->csvValue($row, 'alias'),
+                    'alias_cliente_numero' => filter_var($this->csvValue($row, 'alias_cliente_numero') ?: false, FILTER_VALIDATE_BOOLEAN),
+                    'observaciones' => $this->csvValue($row, 'observaciones'),
+                    'peso_cliente' => $this->csvNumber($row, 'peso_cliente'),
+                    'largo_cliente' => $this->csvNumber($row, 'largo_cliente'),
+                    'ancho_cliente' => $this->csvNumber($row, 'ancho_cliente'),
+                    'alto_cliente' => $this->csvNumber($row, 'alto_cliente'),
+                    'volumen_cliente' => $this->csvNumber($row, 'volumen_cliente'),
                     'cliente_id' => $consolidado->cliente_id,
                     'consolidado_id' => $consolidado->id,
-                    'bodega_id' => $row['bodega_id'] ?? null,
-                    'remitente_id' => $row['remitente_id'] ?? null,
-                    'destinatario_id' => $row['destinatario_id'] ?? null,
-                    'transportadora_id' => $row['transportadora_id'] ?? null,
-                    'oficina_id' => $row['oficina_id'] ?? null,
-                    'modalidad_entrega' => $row['modalidad_entrega'] ?? null,
-                    'vuelta' => $row['vuelta'] ?? null,
+                    'bodega_id' => $this->csvValue($row, 'bodega_id'),
+                    'remitente_id' => $remitenteId,
+                    'destinatario_id' => $destinatarioId,
+                    'transportadora_id' => $this->csvValue($row, 'transportadora_id'),
+                    'oficina_id' => $this->csvValue($row, 'oficina_id'),
+                    'modalidad_entrega' => $this->csvValue($row, 'modalidad_entrega'),
+                    'vuelta' => $this->csvNumber($row, 'vuelta'),
                     'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
                 ]);
@@ -138,6 +191,93 @@ class ConsolidadoController extends Controller
         return redirect()->route('consolidados.show', $consolidado)->with('success', 'Guías importadas correctamente al consolidado.');
     }
 
+    public function addEntrada(Request $request, Consolidado $consolidado)
+    {
+        $this->authorizeOperationalAccess();
+        $this->authorizeConsolidado($consolidado);
+
+        if ($consolidado->cerrado) {
+            abort(422, 'El consolidado está cerrado y no puede recibir nuevas guías.');
+        }
+
+        $data = $request->validate([
+            'numero' => 'required|string|max:255|unique:entradas,numero',
+            'alias' => 'nullable|string|max:255',
+            'observaciones' => 'nullable|string',
+            'peso_cliente' => 'nullable|numeric|min:0',
+            'largo_cliente' => 'nullable|numeric|min:0',
+            'ancho_cliente' => 'nullable|numeric|min:0',
+            'alto_cliente' => 'nullable|numeric|min:0',
+            'volumen_cliente' => 'nullable|numeric|min:0',
+            'remitente_id' => 'nullable|integer|exists:remitentes,id',
+            'destinatario_id' => 'nullable|integer|exists:destinatarios,id',
+            'remitente_nombre' => 'nullable|string|max:255',
+            'remitente_telefono' => 'nullable|string|max:255',
+            'remitente_direccion' => 'nullable|string|max:255',
+            'destinatario_nombre' => 'nullable|string|max:255',
+            'destinatario_telefono' => 'nullable|string|max:255',
+            'destinatario_direccion' => 'nullable|string|max:255',
+            'destinatario_codigo_postal' => 'nullable|string|max:50',
+            'destinatario_referencias' => 'nullable|string|max:255',
+            'destinatario_ciudad' => 'nullable|string|max:255',
+            'destinatario_estado' => 'nullable|string|max:255',
+            'destinatario_pais' => 'nullable|string|max:255',
+            'transportadora_id' => 'nullable|integer|exists:transportadoras,id',
+            'oficina_id' => 'nullable|integer|exists:oficinas,id',
+            'modalidad_entrega' => 'nullable|in:domicilio,ocurre',
+            'vuelta' => 'nullable|integer|min:0',
+        ]);
+
+        if (!$data['remitente_id'] && !empty($data['remitente_nombre'])) {
+            $data['remitente_id'] = Remitente::create([
+                'nombre' => $data['remitente_nombre'],
+                'telefono' => $data['remitente_telefono'] ?? null,
+                'direccion' => $data['remitente_direccion'] ?? null,
+                'activo' => true,
+            ])->id;
+        }
+        if (!$data['destinatario_id'] && !empty($data['destinatario_nombre'])) {
+            $data['destinatario_id'] = Destinatario::create([
+                'nombre' => $data['destinatario_nombre'],
+                'telefono' => $data['destinatario_telefono'] ?? null,
+                'direccion' => $data['destinatario_direccion'] ?? null,
+                'codigo_postal' => $data['destinatario_codigo_postal'] ?? null,
+                'referencias' => $data['destinatario_referencias'] ?? null,
+                'ciudad' => $data['destinatario_ciudad'] ?? null,
+                'estado' => $data['destinatario_estado'] ?? null,
+                'pais' => $data['destinatario_pais'] ?? null,
+                'activo' => true,
+            ])->id;
+        }
+
+        unset($data['remitente_nombre'], $data['remitente_telefono'], $data['remitente_direccion'], $data['destinatario_nombre'], $data['destinatario_telefono'], $data['destinatario_direccion'], $data['destinatario_codigo_postal'], $data['destinatario_referencias'], $data['destinatario_ciudad'], $data['destinatario_estado'], $data['destinatario_pais']);
+
+        $entrada = Entrada::create(array_merge($data, [
+            'alias_cliente_numero' => (bool) $consolidado->cliente_alias_numero,
+            'cliente_id' => $consolidado->cliente_id,
+            'consolidado_id' => $consolidado->id,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]));
+
+        EntradaMovimiento::create([
+            'entrada_id' => $entrada->id,
+            'tipo' => 'creada_manual',
+            'usuario_id' => auth()->id(),
+            'ocurrido_at' => now(),
+            'bodega_id' => $entrada->bodega_id,
+            'observacion' => 'Guía agregada manualmente al consolidado.',
+            'datos' => ['consolidado_id' => $consolidado->id],
+        ]);
+
+        $this->logMovement($consolidado, 'guia_agregada_manual', 'Guía agregada manualmente al consolidado.', [
+            'entrada_id' => $entrada->id,
+            'entrada_numero' => $entrada->numero,
+        ]);
+
+        return redirect()->route('consolidados.show', $consolidado)->with('success', 'Guía agregada correctamente al consolidado.');
+    }
+
     public function store(Request $request)
     {
         $this->authorizeOperationalAccess();
@@ -147,7 +287,6 @@ class ConsolidadoController extends Controller
             'cliente_id' => 'required|integer|exists:clientes,id',
             'cliente_alias_numero' => 'nullable|boolean',
             'notificacion' => 'nullable|date',
-            'cerrado' => 'nullable|boolean',
         ]);
 
         $data = $request->only(['numero', 'palets', 'cliente_id', 'cliente_alias_numero', 'notificacion']);
@@ -186,7 +325,7 @@ class ConsolidadoController extends Controller
         $this->authorizeOperationalAccess();
         $this->authorizeConsolidado($consolidado);
 
-        if ($consolidado->cerrado && !$this->canEditClosedConsolidado()) {
+        if ($consolidado->cerrado && !in_array(auth()->user()->rol, ['supervisor', 'administrador', 'superadministrador'], true)) {
             abort(422, 'El consolidado está cerrado y no puede modificarse.');
         }
 
@@ -212,7 +351,6 @@ class ConsolidadoController extends Controller
             }
 
             $consolidado->update($data);
-
             $cambios = [];
             foreach ($original as $campo => $valor) {
                 if ((string) $valor !== (string) $consolidado->{$campo}) {
@@ -223,14 +361,12 @@ class ConsolidadoController extends Controller
             if ($cambios) {
                 $this->logMovement($consolidado, $clienteCambio ? 'cliente_cambiado' : 'actualizado', 'Datos del consolidado actualizados', $cambios);
             }
-
             if ($request->boolean('cerrado')) {
                 $this->logMovement($consolidado, 'cerrado', 'Consolidado validado y cerrado');
             }
 
             if ($clienteCambio) {
                 $consolidado->entradas()->update(['cliente_id' => $consolidado->cliente_id]);
-
                 foreach ($consolidado->entradas as $entrada) {
                     EntradaMovimiento::create([
                         'entrada_id' => $entrada->id,
@@ -244,10 +380,7 @@ class ConsolidadoController extends Controller
                         'reempacador_id' => $entrada->reempacador_id,
                         'codigor_id' => $entrada->codigor_id,
                         'observacion' => 'La guía heredó el nuevo cliente del consolidado.',
-                        'datos' => [
-                            'consolidado_id' => $consolidado->id,
-                            'cliente_id' => $consolidado->cliente_id,
-                        ],
+                        'datos' => ['consolidado_id' => $consolidado->id, 'cliente_id' => $consolidado->cliente_id],
                     ]);
                 }
             }
@@ -286,6 +419,63 @@ class ConsolidadoController extends Controller
         if (auth()->user()->rol === 'cliente') {
             abort(403);
         }
+    }
+
+    private function csvValue(array $row, $key)
+    {
+        if (!array_key_exists($key, $row) || trim((string) $row[$key]) === '') {
+            return null;
+        }
+
+        return trim($row[$key]);
+    }
+
+    private function csvNumber(array $row, $key)
+    {
+        $value = $this->csvValue($row, $key);
+
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace(',', '.', $value);
+
+        return preg_match('/-?\d+(?:\.\d+)?/', $value, $matches) ? $matches[0] : null;
+    }
+
+    private function normalizeCsvHeader($header)
+    {
+        $header = trim((string) $header);
+        $header = strtr($header, [
+            'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u',
+            'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U',
+        ]);
+        $header = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '_', $header));
+        $header = trim($header, '_');
+
+        return [
+            'numero_de_entrada' => 'entrada_numero',
+            'entrada_numero' => 'entrada_numero',
+            'peso' => 'peso_cliente',
+            'ancho' => 'ancho_cliente',
+            'altura' => 'alto_cliente',
+            'profundidad' => 'largo_cliente',
+            'r_nombre' => 'remitente_nombre',
+            'r_telefono' => 'remitente_telefono',
+            'r_direccion' => 'remitente_direccion',
+            'r_codigo_postal' => 'remitente_codigo_postal',
+            'r_ciudad' => 'remitente_ciudad',
+            'r_estado' => 'remitente_estado',
+            'r_pais' => 'remitente_pais',
+            'd_nombre' => 'destinatario_nombre',
+            'd_telefono' => 'destinatario_telefono',
+            'd_direccion' => 'destinatario_direccion',
+            'd_codigo_postal' => 'destinatario_codigo_postal',
+            'd_referencias' => 'destinatario_referencias',
+            'd_ciudad' => 'destinatario_ciudad',
+            'd_estado' => 'destinatario_estado',
+            'd_pais' => 'destinatario_pais',
+        ][$header] ?? $header;
     }
 
     private function logMovement(Consolidado $consolidado, $tipo, $observacion, array $datos = [])

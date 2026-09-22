@@ -14,6 +14,10 @@ class Remitente extends Model
         'telefono',
         'correo_electronico',
         'direccion',
+        'codigo_postal',
+        'ciudad',
+        'estado',
+        'pais',
         'observaciones',
         'activo',
     ];

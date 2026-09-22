@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([
+            ProtectedSuperAdminSeeder::class,
             UsersTableSeeder::class,
             BodegasTableSeeder::class,
             ClientesTableSeeder::class,

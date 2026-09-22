@@ -47,6 +47,16 @@ class Entrada extends Model
         'control_usa_tipo',
         'control_usa_completado_at',
         'control_usa_completado_por',
+        'peso_cliente',
+        'largo_cliente',
+        'ancho_cliente',
+        'alto_cliente',
+        'volumen_cliente',
+        'codigo_rastreo',
+        'codigo_confirmacion',
+        'status_salida',
+        'incidente_salida',
+        'notas_salida',
     ];
 
     protected $casts = [
@@ -64,6 +74,11 @@ class Entrada extends Model
         'alto_usa' => 'decimal:2',
         'volumen_usa' => 'decimal:2',
         'control_usa_completado_at' => 'datetime',
+        'peso_cliente' => 'decimal:3',
+        'largo_cliente' => 'decimal:2',
+        'ancho_cliente' => 'decimal:2',
+        'alto_cliente' => 'decimal:2',
+        'volumen_cliente' => 'decimal:2',
     ];
 
     public function consolidado()
