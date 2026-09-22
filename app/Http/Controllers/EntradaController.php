@@ -143,6 +143,12 @@ class EntradaController extends Controller
             'recibido_mexico_confirmar' => 'nullable|boolean',
         ]);
 
+        if (Entrada::where('numero', $request->input('numero'))->exists()) {
+            throw ValidationException::withMessages([
+                'numero' => 'Ya existe una guía con ese número.',
+            ]);
+        }
+
         $this->validateConsolidadoCliente($request);
 
         $data = $request->only([
@@ -273,6 +279,12 @@ class EntradaController extends Controller
             'recibido_usa_confirmar' => 'nullable|boolean',
             'recibido_mexico_confirmar' => 'nullable|boolean',
         ]);
+
+        if (Entrada::where('numero', $request->input('numero'))->where('id', '!=', $entrada->id)->exists()) {
+            throw ValidationException::withMessages([
+                'numero' => 'Ya existe otra guía con ese número.',
+            ]);
+        }
 
         $this->validateConsolidadoCliente($request);
 

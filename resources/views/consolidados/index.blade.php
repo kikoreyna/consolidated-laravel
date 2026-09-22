@@ -41,11 +41,6 @@
                             <td>
                                 <a href="{{ route('consolidados.show', $consolidado) }}" class="btn btn-sm btn-info">Ver</a>
                                 <a href="{{ route('consolidados.edit', $consolidado) }}" class="btn btn-sm btn-warning">Editar</a>
-                                <form action="{{ route('consolidados.destroy', $consolidado) }}" method="POST" style="display:inline-block;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar consolidado?')">Eliminar</button>
-                                </form>
                             </td>
                         </tr>
                     @empty

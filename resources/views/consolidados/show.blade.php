@@ -4,9 +4,16 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Detalle del consolidado</h2>
-        @if(!$consolidado->cerrado || in_array(auth()->user()->rol, ['supervisor', 'administrador', 'superadministrador'], true))
-            <a href="{{ route('consolidados.edit', $consolidado) }}" class="btn btn-warning">Editar consolidado</a>
-        @endif
+        <div class="d-flex gap-2">
+            @if(!$consolidado->cerrado || in_array(auth()->user()->rol, ['supervisor', 'administrador', 'superadministrador'], true))
+                <a href="{{ route('consolidados.edit', $consolidado) }}" class="btn btn-warning" title="Editar consolidado" aria-label="Editar consolidado">&#9998;</a>
+            @endif
+            <form action="{{ route('consolidados.destroy', $consolidado) }}" method="POST" class="d-inline">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger" title="Eliminar consolidado" aria-label="Eliminar consolidado" onclick="return confirm('¿Estás seguro de eliminar el consolidado {{ $consolidado->numero }}? Esta acción no se puede deshacer.')">&#128465;</button>
+            </form>
+        </div>
     </div>
 
     <div class="card">
@@ -48,36 +55,67 @@
     </div>
 
     <div class="card mt-4">
-        <div class="card-header">
-            Entradas del consolidado
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Entradas <span class="badge bg-info">{{ $entradas->count() }}</span></span>
+            <div>
+                @if(!$consolidado->cerrado && auth()->user()->rol !== 'cliente')
+                    <a href="{{ route('consolidados.entradas.create', $consolidado) }}" class="btn btn-primary btn-sm" title="Agregar guía" aria-label="Agregar guía">+</a>
+                @endif
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped mb-0">
                     <thead>
                         <tr>
-                            <th>Número</th>
-                            <th>Cliente</th>
-                            <th>Vuelta</th>
-                            <th>Recibido</th>
+                            <th>Guía</th>
+                            <th>Remitente</th>
+                            <th>Destinatario</th>
+                            <th>Salida</th>
+                            <th>Status</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($entradas as $entrada)
                             <tr>
-                                <td>{{ $entrada->numero }}</td>
-                                <td>{{ optional($entrada->cliente)->nombre ?? 'Sin cliente' }}</td>
-                                <td>{{ $entrada->vuelta ?? 'N/A' }}</td>
-                                <td>{{ $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d H:i') : 'N/A' }}</td>
                                 <td>
-                                    <a href="{{ route('entradas.show', $entrada) }}" class="btn btn-sm btn-info">Ver</a>
-                                    <a href="{{ route('entradas.edit', $entrada) }}" class="btn btn-sm btn-warning">Editar</a>
+                                    <a href="{{ route('entradas.show', $entrada) }}">{{ $entrada->numero }}</a>
+                                    @if($entrada->consolidado)
+                                        <small class="d-block text-muted">{{ $entrada->consolidado->numero }}</small>
+                                    @endif
+                                </td>
+                                <td>
+                                    {{ optional($entrada->remitente)->nombre ?? '' }}
+                                    @if(optional($entrada->remitente)->telefono)
+                                        <small class="d-block">{{ $entrada->remitente->telefono }}</small>
+                                    @endif
+                                </td>
+                                <td>
+                                    {{ optional($entrada->destinatario)->nombre ?? '' }}
+                                    @if(optional($entrada->destinatario)->direccion)
+                                        <small class="d-block">{{ $entrada->destinatario->direccion }}</small>
+                                    @endif
+                                    @if(optional($entrada->destinatario)->telefono)
+                                        <small class="d-block">{{ $entrada->destinatario->telefono }}</small>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!$entrada->destinatario_confirmado)
+                                        <span class="badge bg-secondary">VERIFICACION</span>
+                                    @else
+                                        {{ $entrada->modalidad_entrega === 'ocurre' ? 'Ocurre' : ($entrada->modalidad_entrega === 'domicilio' ? 'Domicilio' : '') }}
+                                    @endif
+                                </td>
+                                <td>{{ $entrada->status_salida ?? '' }}</td>
+                                <td>
+                                    <a href="{{ route('entradas.show', $entrada) }}" class="btn btn-sm btn-info" title="Ver guía" aria-label="Ver guía">&#8634;</a>
+                                    <a href="{{ route('entradas.edit', $entrada) }}" class="btn btn-sm btn-warning" title="Editar guía" aria-label="Editar guía">&#9998;</a>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">No hay entradas asociadas a este consolidado.</td>
+                                <td colspan="6" class="text-center">No hay entradas asociadas a este consolidado.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -87,15 +125,11 @@
     </div>
 
     @if(!$consolidado->cerrado && auth()->user()->rol !== 'cliente')
-        <a href="{{ route('consolidados.entradas.create', $consolidado) }}" class="btn btn-primary mt-4">Agregar guía</a>
         <a href="{{ route('consolidados.importar', $consolidado) }}" class="btn btn-outline-primary mt-3">Agregar guías desde CSV</a>
     @endif
 
     <div class="mt-3">
         <a href="{{ route('consolidados.index') }}" class="btn btn-secondary">Volver</a>
-        @if(!$consolidado->cerrado || in_array(auth()->user()->rol, ['supervisor', 'administrador', 'superadministrador'], true))
-            <a href="{{ route('consolidados.edit', $consolidado) }}" class="btn btn-warning">Editar</a>
-        @endif
     </div>
 </div>
 @endsection

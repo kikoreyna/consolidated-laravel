@@ -31,11 +31,12 @@
                 <input type="datetime-local" name="notificacion" class="form-control" value="{{ old('notificacion', $consolidado->notificacion ? $consolidado->notificacion->format('Y-m-d\TH:i') : '') }}">
             </div>
             <div class="col-md-12 mb-3">
-                <label>Cliente alias número</label>
-                <select name="cliente_alias_numero" class="form-control">
+                <label for="cliente_alias_numero">Usar alias del cliente antes del número de guía</label>
+                <select id="cliente_alias_numero" name="cliente_alias_numero" class="form-control">
                     <option value="0" {{ old('cliente_alias_numero', $consolidado->cliente_alias_numero) == '0' ? 'selected' : '' }}>No</option>
                     <option value="1" {{ old('cliente_alias_numero', $consolidado->cliente_alias_numero) == '1' ? 'selected' : '' }}>Sí</option>
                 </select>
+                <small class="form-text text-muted">Las nuevas guías se mostrarán como ALIAS + número. Las guías existentes no se modifican.</small>
             </div>
             <div class="col-md-12 mb-3">
                 <div class="form-check">

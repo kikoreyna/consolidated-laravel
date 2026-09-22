@@ -19,6 +19,9 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('consolidados/{consolidado}/importar', 'ConsolidadoController@importForm')->name('consolidados.importar')->middleware('not-client');
+Route::get('consolidados/plantilla-guias.csv', function () {
+    return response()->download(base_path('consolidado_guias_ejemplo.csv'), 'plantilla-guias.csv');
+})->name('consolidados.plantilla')->middleware('auth');
 Route::post('consolidados/{consolidado}/importar', 'ConsolidadoController@importCsv')->name('consolidados.importar.store')->middleware('not-client');
 Route::post('consolidados/{consolidado}/entradas', 'ConsolidadoController@addEntrada')->name('consolidados.entradas.store')->middleware('not-client');
 Route::get('consolidados/{consolidado}/entradas/crear', 'ConsolidadoController@entradaForm')->name('consolidados.entradas.create')->middleware('not-client');

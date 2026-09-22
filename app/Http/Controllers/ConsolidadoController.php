@@ -73,7 +73,18 @@ class ConsolidadoController extends Controller
             abort(422, 'El consolidado está cerrado y no puede recibir nuevas guías.');
         }
 
-        $request->validate(['archivo' => 'required|file|mimes:csv,txt|max:10240']);
+        $request->validate([
+            'archivo' => 'required|file|mimes:csv,txt|max:10240',
+            'alias_cliente_numero' => 'nullable|boolean',
+        ]);
+
+        $usarAliasCliente = $request->boolean('alias_cliente_numero');
+        $consolidado->loadMissing('cliente');
+        if ($usarAliasCliente && !$consolidado->cliente->alias) {
+            throw ValidationException::withMessages([
+                'alias_cliente_numero' => 'El cliente no tiene un alias configurado.',
+            ]);
+        }
         $handle = fopen($request->file('archivo')->getRealPath(), 'r');
         $headers = array_map(function ($header) {
             return $this->normalizeCsvHeader($header);
@@ -102,14 +113,18 @@ class ConsolidadoController extends Controller
             throw ValidationException::withMessages(['archivo' => 'El CSV no contiene guías.']);
         }
 
-        DB::transaction(function () use ($rows, $consolidado) {
+        DB::transaction(function () use ($rows, $consolidado, $usarAliasCliente) {
             $numeros = [];
             foreach ($rows as $row) {
                 $cliente = $this->csvValue($row, 'cliente_id');
                 if ($cliente !== null && (int) $cliente !== (int) $consolidado->cliente_id) {
                     throw ValidationException::withMessages(['archivo' => 'La fila ' . $row['_line'] . ' pertenece a otro cliente.']);
                 }
-                $numero = $this->csvValue($row, 'entrada_numero');
+                $numero = $this->entradaNumeroConAlias(
+                    $this->csvValue($row, 'entrada_numero'),
+                    $consolidado,
+                    $usarAliasCliente || filter_var($this->csvValue($row, 'alias_cliente_numero') ?: false, FILTER_VALIDATE_BOOLEAN)
+                );
                 if ($numero === null || isset($numeros[$numero]) || Entrada::where('numero', $numero)->exists()) {
                     throw ValidationException::withMessages(['archivo' => 'Número de entrada inválido o duplicado en la fila ' . $row['_line'] . '.']);
                 }
@@ -154,9 +169,9 @@ class ConsolidadoController extends Controller
                     ])->id;
                 }
                 $entrada = Entrada::create([
-                    'numero' => $this->csvValue($row, 'entrada_numero'),
+                    'numero' => $this->entradaNumeroConAlias($this->csvValue($row, 'entrada_numero'), $consolidado, $usarAliasCliente || filter_var($this->csvValue($row, 'alias_cliente_numero') ?: false, FILTER_VALIDATE_BOOLEAN)),
                     'alias' => $this->csvValue($row, 'alias'),
-                    'alias_cliente_numero' => filter_var($this->csvValue($row, 'alias_cliente_numero') ?: false, FILTER_VALIDATE_BOOLEAN),
+                    'alias_cliente_numero' => $usarAliasCliente || filter_var($this->csvValue($row, 'alias_cliente_numero') ?: false, FILTER_VALIDATE_BOOLEAN),
                     'observaciones' => $this->csvValue($row, 'observaciones'),
                     'peso_cliente' => $this->csvNumber($row, 'peso_cliente'),
                     'largo_cliente' => $this->csvNumber($row, 'largo_cliente'),
@@ -201,7 +216,7 @@ class ConsolidadoController extends Controller
         }
 
         $data = $request->validate([
-            'numero' => 'required|string|max:255|unique:entradas,numero',
+            'numero' => 'required|string|max:255',
             'alias' => 'nullable|string|max:255',
             'observaciones' => 'nullable|string',
             'peso_cliente' => 'nullable|numeric|min:0',
@@ -252,6 +267,13 @@ class ConsolidadoController extends Controller
 
         unset($data['remitente_nombre'], $data['remitente_telefono'], $data['remitente_direccion'], $data['destinatario_nombre'], $data['destinatario_telefono'], $data['destinatario_direccion'], $data['destinatario_codigo_postal'], $data['destinatario_referencias'], $data['destinatario_ciudad'], $data['destinatario_estado'], $data['destinatario_pais']);
 
+        $data['numero'] = $this->entradaNumeroConAlias($data['numero'], $consolidado, (bool) $consolidado->cliente_alias_numero);
+        if (Entrada::where('numero', $data['numero'])->exists()) {
+            throw ValidationException::withMessages([
+                'numero' => 'Ya existe una guía con el número ' . $data['numero'] . '.',
+            ]);
+        }
+
         $entrada = Entrada::create(array_merge($data, [
             'alias_cliente_numero' => (bool) $consolidado->cliente_alias_numero,
             'cliente_id' => $consolidado->cliente_id,
@@ -301,7 +323,7 @@ class ConsolidadoController extends Controller
     {
         $this->authorizeConsolidado($consolidado);
         $consolidado->load(['cliente', 'cerradoPor', 'movimientos.usuario']);
-        $entradas = Entrada::with('cliente')->where('consolidado_id', $consolidado->id)
+        $entradas = Entrada::with(['cliente', 'remitente', 'destinatario'])->where('consolidado_id', $consolidado->id)
             ->when(auth()->user()->rol === 'cliente', function ($query) {
                 return $query->whereIn('cliente_id', auth()->user()->clientes()->wherePivot('activo', true)->pluck('clientes.id'));
             })
@@ -337,6 +359,15 @@ class ConsolidadoController extends Controller
             'notificacion' => 'nullable|date',
             'cerrado' => 'nullable|boolean',
         ]);
+
+        if ($request->boolean('cliente_alias_numero')) {
+            $cliente = Cliente::findOrFail($request->input('cliente_id'));
+            if (!$cliente->alias) {
+                throw ValidationException::withMessages([
+                    'cliente_alias_numero' => 'El cliente seleccionado no tiene un alias configurado.',
+                ]);
+            }
+        }
 
         DB::transaction(function () use ($request, $consolidado) {
             $clienteCambio = (int) $consolidado->cliente_id !== (int) $request->input('cliente_id');
@@ -441,6 +472,17 @@ class ConsolidadoController extends Controller
         $value = str_replace(',', '.', $value);
 
         return preg_match('/-?\d+(?:\.\d+)?/', $value, $matches) ? $matches[0] : null;
+    }
+
+    private function entradaNumeroConAlias($numero, Consolidado $consolidado, $usarAlias)
+    {
+        if (!$usarAlias || !$consolidado->cliente || !$consolidado->cliente->alias) {
+            return $numero;
+        }
+
+        $alias = trim($consolidado->cliente->alias);
+
+        return stripos($numero, $alias) === 0 ? $numero : $alias . $numero;
     }
 
     private function normalizeCsvHeader($header)

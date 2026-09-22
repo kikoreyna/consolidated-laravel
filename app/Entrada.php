@@ -81,6 +81,17 @@ class Entrada extends Model
         'volumen_cliente' => 'decimal:2',
     ];
 
+    public function formatMeasurement($value)
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $formatted = rtrim(rtrim((string) $value, '0'), '.');
+
+        return $formatted === '' || $formatted === '-0' ? '0' : $formatted;
+    }
+
     public function consolidado()
     {
         return $this->belongsTo(Consolidado::class, 'consolidado_id');

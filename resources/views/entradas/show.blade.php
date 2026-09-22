@@ -57,8 +57,8 @@
                             <tr><td>Verificación</td><td>{{ $entrada->destinatario_confirmado ? 'Confirmado' : '' }}</td></tr>
                             <tr><td>Fecha de verificado</td><td>{{ $entrada->destinatario_confirmado_at ? $entrada->destinatario_confirmado_at->format('Y-m-d H:i') : '' }}</td></tr>
                             <tr><th colspan="2">Medidas declaradas</th></tr>
-                            <tr><td>Peso</td><td>{{ $entrada->peso_cliente !== null ? $entrada->peso_cliente : '' }}</td></tr>
-                            <tr><td>Medidas</td><td>{{ $entrada->largo_cliente !== null ? $entrada->largo_cliente . ' x ' . $entrada->ancho_cliente . ' x ' . $entrada->alto_cliente : '' }}</td></tr>
+                            <tr><td>Peso</td><td>{{ $entrada->formatMeasurement($entrada->peso_cliente) }}</td></tr>
+                            <tr><td>Medidas</td><td>{{ $entrada->largo_cliente !== null ? $entrada->formatMeasurement($entrada->largo_cliente) . ' x ' . $entrada->formatMeasurement($entrada->ancho_cliente) . ' x ' . $entrada->formatMeasurement($entrada->alto_cliente) : '' }}</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -91,8 +91,8 @@
                                 <tr><td>Fecha de actualizado</td><td>{{ optional($entrada->updated_at)->format('Y-m-d H:i') }}</td></tr>
                                 <tr><th colspan="2">Control USA</th></tr>
                                 <tr><td>Tipo</td><td>{{ $entrada->control_usa_tipo ? ucfirst(str_replace('_', ' ', $entrada->control_usa_tipo)) : '' }}</td></tr>
-                                <tr><td>Peso</td><td>{{ $entrada->peso_usa !== null ? $entrada->peso_usa . ' lb' : '' }}</td></tr>
-                                <tr><td>Medidas</td><td>{{ $entrada->largo_usa !== null ? $entrada->largo_usa . ' x ' . $entrada->ancho_usa . ' x ' . $entrada->alto_usa . ' in' : '' }}</td></tr>
+                                <tr><td>Peso</td><td>{{ $entrada->formatMeasurement($entrada->peso_usa) }}{{ $entrada->peso_usa !== null ? ' lb' : '' }}</td></tr>
+                                <tr><td>Medidas</td><td>{{ $entrada->largo_usa !== null ? $entrada->formatMeasurement($entrada->largo_usa) . ' x ' . $entrada->formatMeasurement($entrada->ancho_usa) . ' x ' . $entrada->formatMeasurement($entrada->alto_usa) . ' in' : '' }}</td></tr>
                             </tbody>
                         </table>
                     @endif

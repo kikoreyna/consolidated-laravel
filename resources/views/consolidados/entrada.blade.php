@@ -15,7 +15,45 @@
         </div>
     @endif
 
-    <form action="{{ route('consolidados.entradas.store', $consolidado) }}" method="POST">
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="multiple-tab" data-bs-toggle="tab" data-bs-target="#multiple" type="button" role="tab" aria-controls="multiple" aria-selected="true">Múltiple</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="solo-una-tab" data-bs-toggle="tab" data-bs-target="#solo-una" type="button" role="tab" aria-controls="solo-una" aria-selected="false">Solo una</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="multiple" role="tabpanel" aria-labelledby="multiple-tab">
+            <div class="d-flex justify-content-end mb-4">
+                <a href="{{ route('consolidados.plantilla') }}" class="btn btn-info">&#8681; Descargar plantilla CSV</a>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="mb-3">Carga varias guías usando la plantilla CSV. El cliente y consolidado se asignan automáticamente.</p>
+                    <form action="{{ route('consolidados.importar.store', $consolidado) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="archivo">Seleccionar archivo *.csv</label>
+                            <input id="archivo" type="file" name="archivo" accept=".csv,text/csv" class="form-control" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="hidden" name="alias_cliente_numero" value="0">
+                            <input id="alias_cliente_numero" type="checkbox" name="alias_cliente_numero" value="1" class="form-check-input" {{ old('alias_cliente_numero', $consolidado->cliente_alias_numero) ? 'checked' : '' }}>
+                            <label for="alias_cliente_numero" class="form-check-label">Usar alias del cliente antes del número de guía</label>
+                            <small class="d-block text-muted">Ejemplo: ALIAS#####</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Validar archivo .csv</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="solo-una" role="tabpanel" aria-labelledby="solo-una-tab">
+            <p class="text-muted">El cliente se asignará automáticamente desde el consolidado. Los datos de remitente y destinatario son opcionales.</p>
+            <div class="solo-una-form">
+            <form action="{{ route('consolidados.entradas.store', $consolidado) }}" method="POST">
         @csrf
         <div class="card mb-4">
             <div class="card-header">Datos de la guía</div>
@@ -88,6 +126,9 @@
 
         <button type="submit" class="btn btn-primary">Guardar guía</button>
         <a href="{{ route('consolidados.show', $consolidado) }}" class="btn btn-secondary">Cancelar</a>
-    </form>
+            </form>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
