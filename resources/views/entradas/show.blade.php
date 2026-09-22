@@ -2,52 +2,102 @@
 
 @section('content')
 <div class="container">
-    <h2>Detalle de la entrada</h2>
+    <div class="row align-items-start">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center"><span>Entrada</span><a href="{{ route('entradas.edit', $entrada) }}" class="btn btn-warning btn-sm" title="Editar entrada">&#9998;</a></div>
+                <div class="card-body p-2">
+                    <table class="table table-sm table-bordered mb-0">
+                        <tbody>
+                            <tr><th colspan="2">Información</th></tr>
+                            <tr><td>Número</td><td>{{ $entrada->numero }}</td></tr>
+                            <tr><td>Cliente</td><td>{{ optional($entrada->cliente)->nombre ?? 'Sin cliente' }}</td></tr>
+                            <tr><td>Consolidado</td><td>@if($entrada->consolidado)<a href="{{ route('consolidados.show', $entrada->consolidado) }}">{{ $entrada->consolidado->numero }}</a>@else Sin consolidar @endif</td></tr>
+                            <tr><td>Creado por</td><td>{{ optional($entrada->createdBy)->name ?? 'N/A' }}</td></tr>
+                            <tr><td>Fecha de creación</td><td>{{ optional($entrada->created_at)->format('Y-m-d H:i') }}</td></tr>
+                            <tr><td>Actualizado por</td><td>{{ optional($entrada->updatedBy)->name ?? 'N/A' }}</td></tr>
+                            <tr><td>Fecha de actualización</td><td>{{ optional($entrada->updated_at)->format('Y-m-d H:i') }}</td></tr>
+                            <tr><th colspan="2">Proceso</th></tr>
+                            <tr><td>Recibido</td><td>{{ $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d H:i') : '' }}</td></tr>
+                            <tr><td>En bodega USA por</td><td>{{ optional($entrada->recibidoUsaPor)->name ?? '' }}</td></tr>
+                            <tr><td>En bodega México por</td><td>{{ optional($entrada->recibidoMexicoPor)->name ?? '' }}</td></tr>
+                            <tr><td>Conductor</td><td>{{ optional($entrada->conductor)->nombre ?? 'Sin conductor' }}</td></tr>
+                            <tr><td>Vehículo</td><td>{{ optional($entrada->vehiculo)->alias ?? 'Sin vehículo' }}</td></tr>
+                            <tr><td>Número de vuelta</td><td>{{ $entrada->vuelta ?? 'N/A' }}</td></tr>
+                            <tr><td>Fecha de cruce</td><td>{{ $entrada->cruce_at ? $entrada->cruce_at->format('Y-m-d H:i') : '' }}</td></tr>
+                            <tr><td>Reempacador</td><td>{{ optional($entrada->reempacador)->nombre ?? '' }}</td></tr>
+                            <tr><td>Código de reempacado</td><td>{{ optional($entrada->codigor)->nombre ?? '' }}</td></tr>
+                            <tr><td>Reempacado por</td><td>{{ optional($entrada->reempacadoPor)->name ?? '' }}</td></tr>
+                            <tr><td>Fecha de reempacado</td><td>{{ $entrada->reempacado_at ? $entrada->reempacado_at->format('Y-m-d H:i') : '' }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-    <div class="card">
-        <div class="card-body">
-            <p><strong>Número:</strong> {{ $entrada->numero }}</p>
-            <p><strong>Alias:</strong> {{ $entrada->alias ?? 'N/A' }}</p>
-            <p><strong>Observaciones:</strong> {{ $entrada->observaciones ?? 'N/A' }}</p>
-            <p><strong>Alias cliente número:</strong> {{ $entrada->alias_cliente_numero ? 'Sí' : 'No' }}</p>
-            <p><strong>Cliente:</strong> {{ optional($entrada->cliente)->nombre ?? 'Cliente no disponible' }}</p>
-            <p><strong>Remitente:</strong> {{ optional($entrada->remitente)->nombre ?? 'Sin remitente' }}</p>
-            <p><strong>Destinatario:</strong> {{ optional($entrada->destinatario)->nombre ?? 'Sin destinatario' }}</p>
-            <p><strong>Datos del destinatario:</strong> {{ $entrada->destinatario_confirmado ? 'Confirmados' : 'Pendientes de confirmación' }}</p>
-            @if($entrada->destinatario_confirmado)
-                <p><strong>Confirmado por:</strong> {{ optional($entrada->destinatarioConfirmadoPor)->name ?? 'Usuario no disponible' }}</p>
-                <p><strong>Fecha de confirmación:</strong> {{ optional($entrada->destinatario_confirmado_at)->format('Y-m-d H:i') }}</p>
-            @endif
-            <p><strong>Consolidado:</strong>
-                @if($entrada->consolidado)
-                    <a href="{{ route('consolidados.show', $entrada->consolidado) }}">
-                        {{ $entrada->consolidado->numero }}
-                    </a>
-                @else
-                    Sin consolidar
-                @endif
-            </p>
-            <p><strong>Modalidad de entrega:</strong> {{ $entrada->modalidad_entrega === 'ocurre' ? 'A ocurre' : ($entrada->modalidad_entrega === 'domicilio' ? 'A domicilio' : 'Sin definir') }}</p>
-            <p><strong>Transportadora:</strong> {{ optional($entrada->transportadora)->nombre ?? 'Sin transportadora' }}</p>
-            <p><strong>Oficina:</strong> {{ optional($entrada->oficina)->nombre ?? 'Sin oficina' }}</p>
-            <p><strong>Vuelta:</strong> {{ $entrada->vuelta ?? 'N/A' }}</p>
-            <p><strong>Recibido:</strong> {{ $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d H:i') : 'N/A' }}</p>
-            <p><strong>Recibido en USA:</strong> {{ $entrada->recibido_usa_at ? optional($entrada->recibidoUsaPor)->name . ' - ' . $entrada->recibido_usa_at->format('Y-m-d H:i') : 'Pendiente' }}</p>
-            <p><strong>Recibido en México:</strong> {{ $entrada->recibido_mexico_at ? optional($entrada->recibidoMexicoPor)->name . ' - ' . $entrada->recibido_mexico_at->format('Y-m-d H:i') : 'Pendiente' }}</p>
-            <p><strong>Control USA:</strong> {{ $entrada->control_usa_tipo ? ucfirst(str_replace('_', ' ', $entrada->control_usa_tipo)) : 'Pendiente' }}</p>
-            <p><strong>Peso USA:</strong> {{ $entrada->peso_usa !== null ? $entrada->peso_usa . ' kg' : 'N/A' }}</p>
-            <p><strong>Medidas USA:</strong> {{ $entrada->largo_usa !== null ? $entrada->largo_usa . ' x ' . $entrada->ancho_usa . ' x ' . $entrada->alto_usa . ' cm' : 'N/A' }}</p>
-            <p><strong>Volumen USA:</strong> {{ $entrada->volumen_usa !== null ? $entrada->volumen_usa . ' cm³' : 'N/A' }}</p>
-            <p><strong>Control USA completado por:</strong> {{ optional($entrada->controlUsaCompletadoPor)->name ?? 'Pendiente' }}</p>
-            <p><strong>Conductor:</strong> {{ optional($entrada->conductor)->nombre ?? 'Sin conductor' }}</p>
-            <p><strong>Vehículo:</strong> {{ optional($entrada->vehiculo)->alias ?? 'Sin vehículo' }}</p>
-            <p><strong>Fecha cruce:</strong> {{ $entrada->cruce_at ? $entrada->cruce_at->format('Y-m-d H:i') : 'N/A' }}</p>
-            <p><strong>Reempacador:</strong> {{ optional($entrada->reempacador)->nombre ?? 'Sin reempacador' }}</p>
-            <p><strong>Código R:</strong> {{ optional($entrada->codigor)->nombre ?? 'Sin código' }}</p>
-            <p><strong>Fecha reempacado:</strong> {{ $entrada->reempacado_at ? $entrada->reempacado_at->format('Y-m-d H:i') : 'N/A' }}</p>
-            <p><strong>Reempacado por:</strong> {{ optional($entrada->reempacadoPor)->name ?? 'Pendiente' }}</p>
-            <p><strong>Creado por:</strong> {{ optional($entrada->createdBy)->name ?? 'Usuario no disponible' }}</p>
-            <p><strong>Actualizado por:</strong> {{ optional($entrada->updatedBy)->name ?? 'Usuario no disponible' }}</p>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">Trayectoria</div>
+                <div class="card-body p-2">
+                    <table class="table table-sm table-bordered mb-0">
+                        <tbody>
+                            <tr><th colspan="2">Remitente</th></tr>
+                            <tr><td>Nombre</td><td>{{ optional($entrada->remitente)->nombre ?? '' }}</td></tr>
+                            <tr><td>Dirección</td><td>{{ optional($entrada->remitente)->direccion ?? '' }}</td></tr>
+                            <tr><td>Postal</td><td>{{ optional($entrada->remitente)->codigo_postal ?? '' }}</td></tr>
+                            <tr><td>Localidad</td><td>{{ collect([optional($entrada->remitente)->ciudad, optional($entrada->remitente)->estado, optional($entrada->remitente)->pais])->filter()->implode(', ') }}</td></tr>
+                            <tr><td>Teléfono</td><td>{{ optional($entrada->remitente)->telefono ?? '' }}</td></tr>
+                            <tr><th colspan="2">Destinatario</th></tr>
+                            <tr><td>Nombre</td><td>{{ optional($entrada->destinatario)->nombre ?? '' }}</td></tr>
+                            <tr><td>Dirección</td><td>{{ optional($entrada->destinatario)->direccion ?? '' }}</td></tr>
+                            <tr><td>Postal</td><td>{{ optional($entrada->destinatario)->codigo_postal ?? '' }}</td></tr>
+                            <tr><td>Referencias</td><td>{{ optional($entrada->destinatario)->referencias ?? '' }}</td></tr>
+                            <tr><td>Localidad</td><td>{{ collect([optional($entrada->destinatario)->ciudad, optional($entrada->destinatario)->estado, optional($entrada->destinatario)->pais])->filter()->implode(', ') }}</td></tr>
+                            <tr><td>Teléfono</td><td>{{ optional($entrada->destinatario)->telefono ?? '' }}</td></tr>
+                            <tr><td>Verificación</td><td>{{ $entrada->destinatario_confirmado ? 'Confirmado' : '' }}</td></tr>
+                            <tr><td>Fecha de verificado</td><td>{{ $entrada->destinatario_confirmado_at ? $entrada->destinatario_confirmado_at->format('Y-m-d H:i') : '' }}</td></tr>
+                            <tr><th colspan="2">Medidas declaradas</th></tr>
+                            <tr><td>Peso</td><td>{{ $entrada->peso_cliente !== null ? $entrada->peso_cliente : '' }}</td></tr>
+                            <tr><td>Medidas</td><td>{{ $entrada->largo_cliente !== null ? $entrada->largo_cliente . ' x ' . $entrada->ancho_cliente . ' x ' . $entrada->alto_cliente : '' }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center"><span>Salida</span><a href="{{ route('entradas.salida.edit', $entrada) }}" class="btn btn-warning btn-sm" title="Editar datos de salida">&#9998;</a></div>
+                <div class="card-body p-2">
+                    @if(!$entrada->destinatario_confirmado)
+                        <div class="d-flex flex-column justify-content-center text-center px-4" style="min-height: 270px;">
+                            <p class="mb-2">Para crear la guía de salida, se requiere</p>
+                            <strong>La verificación del destinatario</strong>
+                            <a href="{{ route('entradas.edit', $entrada) }}#destinatario_confirmado" class="btn btn-outline-primary btn-sm align-self-center mt-4">Verificar destinatario</a>
+                        </div>
+                    @else
+                        <table class="table table-sm table-bordered mb-0">
+                            <tbody>
+                                <tr><th colspan="2">Información</th></tr>
+                                <tr><td>Rastreo</td><td>{{ $entrada->codigo_rastreo ?? '' }}</td></tr>
+                                <tr><td>Confirmación</td><td>{{ $entrada->codigo_confirmacion ?? '' }}</td></tr>
+                                <tr><td>Transportadora</td><td>{{ optional($entrada->transportadora)->nombre ?? '' }}</td></tr>
+                                <tr><td>Cobertura</td><td>{{ $entrada->modalidad_entrega === 'ocurre' ? 'Ocurre' : ($entrada->modalidad_entrega === 'domicilio' ? 'Domicilio' : '') }}</td></tr>
+                                <tr><td>Dirección de ocurre</td><td>{{ optional($entrada->oficina)->nombre ?? '' }}</td></tr>
+                                <tr><td>Status</td><td>{{ $entrada->status_salida ?? '' }}</td></tr>
+                                <tr><td>Incidente</td><td>{{ $entrada->incidente_salida ?? '' }}</td></tr>
+                                <tr><td>Notas</td><td>{{ $entrada->notas_salida ?? '' }}</td></tr>
+                                <tr><td>Actualizado por</td><td>{{ optional($entrada->updatedBy)->name ?? 'N/A' }}</td></tr>
+                                <tr><td>Fecha de actualizado</td><td>{{ optional($entrada->updated_at)->format('Y-m-d H:i') }}</td></tr>
+                                <tr><th colspan="2">Control USA</th></tr>
+                                <tr><td>Tipo</td><td>{{ $entrada->control_usa_tipo ? ucfirst(str_replace('_', ' ', $entrada->control_usa_tipo)) : '' }}</td></tr>
+                                <tr><td>Peso</td><td>{{ $entrada->peso_usa !== null ? $entrada->peso_usa . ' lb' : '' }}</td></tr>
+                                <tr><td>Medidas</td><td>{{ $entrada->largo_usa !== null ? $entrada->largo_usa . ' x ' . $entrada->ancho_usa . ' x ' . $entrada->alto_usa . ' in' : '' }}</td></tr>
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 

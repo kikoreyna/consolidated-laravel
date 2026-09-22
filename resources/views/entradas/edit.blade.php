@@ -73,7 +73,7 @@
                 </select>
             </div>
             <div class="col-md-6 mb-3">
-                <label for="bodega_id">Bodega</label>
+                <label for="bodega_id">Bodega actual / trasladar a</label>
                 <select id="bodega_id" name="bodega_id" class="form-control">
                     <option value="">Sin bodega</option>
                     @foreach($bodegas as $bodega)

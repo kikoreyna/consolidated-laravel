@@ -1,0 +1,3 @@
+entrada_numero,cliente_id,alias,observaciones,peso_cliente,largo_cliente,ancho_cliente,alto_cliente,volumen_cliente,bodega_id,remitente_id,destinatario_id,transportadora_id,oficina_id,modalidad_entrega,vuelta
+GUIA-EJEMPLO-001,,,,25.500,40,30,20,24000,,,,,,domicilio,1
+GUIA-EJEMPLO-002,,,,12.750,30,20,15,9000,,,,,,ocurre,1

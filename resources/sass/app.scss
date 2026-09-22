@@ -6,3 +6,56 @@
 
 // Bootstrap
 @import '~bootstrap/scss/bootstrap';
+
+:root {
+	--soft-yellow: #fff9df;
+	--soft-yellow-alt: #fffdf2;
+	--grid-purple: #5a3d78;
+	--grid-purple-light: #d9cbe8;
+	--grid-purple-dark: #432d5b;
+}
+
+body {
+	background-color: var(--soft-yellow-alt);
+}
+
+.card {
+	border-color: var(--grid-purple-light);
+	background-color: #fffef8;
+}
+
+.card-header {
+	background-color: var(--soft-yellow);
+	border-bottom-color: var(--grid-purple-light);
+	color: var(--grid-purple-dark);
+}
+
+.table {
+	--bs-table-striped-bg: #fff9e8;
+	--bs-table-hover-bg: #fff3c4;
+	background-color: #fffef8;
+}
+
+.table-bordered,
+.table-bordered > :not(caption) > * > * {
+	border-color: var(--grid-purple-light);
+}
+
+.table thead th,
+.table tbody th {
+	background-color: var(--grid-purple);
+	color: #fff;
+	border-color: var(--grid-purple);
+}
+
+.table tbody td {
+	background-color: var(--soft-yellow-alt);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+	background-color: var(--soft-yellow);
+}
+
+.table-hover > tbody > tr:hover > * {
+	background-color: #fff0b8;
+}

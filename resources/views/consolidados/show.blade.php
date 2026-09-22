@@ -87,6 +87,7 @@
     </div>
 
     @if(!$consolidado->cerrado && auth()->user()->rol !== 'cliente')
+        <a href="{{ route('consolidados.entradas.create', $consolidado) }}" class="btn btn-primary mt-4">Agregar guía</a>
         <a href="{{ route('consolidados.importar', $consolidado) }}" class="btn btn-outline-primary mt-3">Agregar guías desde CSV</a>
     @endif
 

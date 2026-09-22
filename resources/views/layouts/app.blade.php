@@ -53,6 +53,9 @@
                                 <ul class="dropdown-menu" aria-labelledby="operacionDropdown">
                                     <li><a class="dropdown-item" href="{{ route('consolidados.index') }}">Consolidados</a></li>
                                     <li><a class="dropdown-item" href="{{ route('entradas.index') }}">Entradas</a></li>
+                                    @if(in_array(auth()->user()->rol, ['bodega_usa', 'documentador', 'supervisor', 'administrador', 'superadministrador'], true))
+                                        <li><a class="dropdown-item" href="{{ route('bodega-usa') }}">Bodega USA</a></li>
+                                    @endif
                                     <li><a class="dropdown-item" href="{{ route('mediciones.index') }}">Mediciones</a></li>
                                     <li><a class="dropdown-item" href="{{ route('observaciones.index') }}">Observaciones</a></li>
                                 </ul>
