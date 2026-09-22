@@ -1,0 +1,10 @@
+<div class="row">
+    <div class="col-md-6 mb-3"><label>Nombre</label><input name="name" class="form-control" value="{{ old('name', $usuario->name ?? '') }}" required></div>
+    <div class="col-md-6 mb-3"><label>Correo electrónico</label><input type="email" name="email" class="form-control" value="{{ old('email', $usuario->email ?? '') }}" required></div>
+    <div class="col-md-6 mb-3"><label>Contraseña {{ isset($usuario) ? '(opcional)' : '' }}</label><input type="password" name="password" class="form-control" {{ isset($usuario) ? '' : 'required' }}></div>
+    <div class="col-md-6 mb-3"><label>Confirmar contraseña</label><input type="password" name="password_confirmation" class="form-control" {{ isset($usuario) ? '' : 'required' }}></div>
+    <div class="col-md-6 mb-3"><label>Rol</label><select name="rol" class="form-control" required>@foreach($roles as $rol)<option value="{{ $rol }}" {{ old('rol', $usuario->rol ?? 'cliente') == $rol ? 'selected' : '' }}>{{ ucfirst(str_replace('_', ' ', $rol)) }}</option>@endforeach</select></div>
+    <div class="col-md-6 mb-3"><label>Estado</label><select name="activo" class="form-control" required><option value="1" {{ old('activo', $usuario->activo ?? true) ? 'selected' : '' }}>Activo</option><option value="0" {{ !old('activo', $usuario->activo ?? true) ? 'selected' : '' }}>Inactivo</option></select></div>
+    <div class="col-md-6 mb-3"><label>Bodegas asignadas</label><select name="bodegas[]" class="form-control" multiple>@foreach($bodegas as $bodega)<option value="{{ $bodega->id }}" {{ in_array($bodega->id, old('bodegas', isset($usuario) ? $usuario->bodegas->pluck('id')->all() : [])) ? 'selected' : '' }}>{{ $bodega->nombre }}</option>@endforeach</select></div>
+    <div class="col-md-6 mb-3"><label>Clientes asignados</label><select name="clientes[]" class="form-control" multiple>@foreach($clientes as $cliente)<option value="{{ $cliente->id }}" {{ in_array($cliente->id, old('clientes', isset($usuario) ? $usuario->clientes->pluck('id')->all() : [])) ? 'selected' : '' }}>{{ $cliente->nombre }}</option>@endforeach</select></div>
+</div>

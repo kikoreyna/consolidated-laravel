@@ -27,7 +27,7 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label>Notificación</label>
-                <input type="datetime-local" name="notificacion" class="form-control" value="{{ old('notificacion') }}">
+                <input type="datetime-local" name="notificacion" class="form-control" value="{{ old('notificacion', now()->format('Y-m-d\TH:i')) }}">
             </div>
             <div class="col-md-12 mb-3">
                 <label>Cliente alias número</label>

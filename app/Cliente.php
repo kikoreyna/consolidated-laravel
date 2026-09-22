@@ -20,4 +20,9 @@ class Cliente extends Model
         'pais',
         'notas',
     ];
+
+    public function usuarios()
+    {
+        return $this->belongsToMany(User::class, 'cliente_user')->withPivot('activo');
+    }
 }

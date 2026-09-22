@@ -1,0 +1,2 @@
+@extends('layouts.app')
+@section('content')<div class="container"><h2>Editar cobertura</h2><form method="POST" action="{{ route('coberturas.update', $cobertura) }}">@csrf @method('PUT') @include('coberturas._form') @include('layouts.validation')<button class="btn btn-primary">Actualizar</button> <a href="{{ route('coberturas.index') }}" class="btn btn-secondary">Cancelar</a></form></div>@endsection

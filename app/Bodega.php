@@ -11,5 +11,21 @@ class Bodega extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'codigo',
+        'pais',
+        'activa',
+        'control_usa',
     ];
+
+    protected $casts = ['activa' => 'boolean'];
+
+    public function usuarios()
+    {
+        return $this->belongsToMany(User::class, 'bodega_user');
+    }
+
+    public function entradas()
+    {
+        return $this->hasMany(Entrada::class);
+    }
 }

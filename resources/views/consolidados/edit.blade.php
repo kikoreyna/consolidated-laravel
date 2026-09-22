@@ -37,6 +37,13 @@
                     <option value="1" {{ old('cliente_alias_numero', $consolidado->cliente_alias_numero) == '1' ? 'selected' : '' }}>Sí</option>
                 </select>
             </div>
+            <div class="col-md-12 mb-3">
+                <div class="form-check">
+                    <input type="checkbox" name="cerrado" value="1" class="form-check-input" id="cerrado">
+                    <label class="form-check-label" for="cerrado">Validar y cerrar consolidado</label>
+                </div>
+                <small class="text-muted">Al cerrarlo ya no podrá modificarse.</small>
+            </div>
         </div>
 
         @if($errors->any())

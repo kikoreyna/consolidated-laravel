@@ -20,6 +20,14 @@
                 </select>
             </div>
             <div class="col-md-6 mb-3">
+                <label>Alias de la guía</label>
+                <input type="text" name="alias" class="form-control" value="{{ old('alias') }}">
+            </div>
+            <div class="col-md-12 mb-3">
+                <label>Observaciones</label>
+                <textarea name="observaciones" class="form-control" rows="2">{{ old('observaciones') }}</textarea>
+            </div>
+            <div class="col-md-6 mb-3">
                 <label for="cliente_id">Cliente</label>
                 <select id="cliente_id" name="cliente_id" class="form-control" required>
                     <option value="">Selecciona un cliente</option>
@@ -54,6 +62,15 @@
                     <option value="">Sin destinatario</option>
                     @foreach($destinatarios as $destinatario)
                         <option value="{{ $destinatario->id }}" {{ old('destinatario_id') == $destinatario->id ? 'selected' : '' }}>{{ $destinatario->nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="bodega_id">Bodega</label>
+                <select id="bodega_id" name="bodega_id" class="form-control">
+                    <option value="">Sin bodega</option>
+                    @foreach($bodegas as $bodega)
+                        <option value="{{ $bodega->id }}" {{ old('bodega_id') == $bodega->id ? 'selected' : '' }}>{{ $bodega->nombre }}</option>
                     @endforeach
                 </select>
             </div>

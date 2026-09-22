@@ -34,13 +34,19 @@
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
-                                    Inicio
-                                </a>
-                            </li>
+                            @if(auth()->user()->rol === 'cliente')
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('consolidados.*') ? 'active' : '' }}" href="{{ route('consolidados.index') }}">Consolidados</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('entradas.*') ? 'active' : '' }}" href="{{ route('entradas.index') }}">Entradas</a>
+                                </li>
+                            @else
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Inicio</a>
+                                </li>
 
-                            <li class="nav-item dropdown">
+                                <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle {{ request()->routeIs('consolidados.*', 'entradas.*', 'mediciones.*', 'observaciones.*') ? 'active' : '' }}" href="#" id="operacionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Operación
                                 </a>
@@ -50,9 +56,9 @@
                                     <li><a class="dropdown-item" href="{{ route('mediciones.index') }}">Mediciones</a></li>
                                     <li><a class="dropdown-item" href="{{ route('observaciones.index') }}">Observaciones</a></li>
                                 </ul>
-                            </li>
+                                </li>
 
-                            <li class="nav-item dropdown">
+                                <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle {{ request()->routeIs('clientes.*', 'conductores.*', 'vehiculos.*', 'transportadoras.*', 'bodegas.*', 'reempacadores.*', 'codigosr.*', 'remitentes.*', 'destinatarios.*', 'oficinas.*') ? 'active' : '' }}" href="#" id="catalogosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Catálogos
                                 </a>
@@ -68,8 +74,15 @@
                                     <li><a class="dropdown-item" href="{{ route('remitentes.index') }}">Remitentes</a></li>
                                     <li><a class="dropdown-item" href="{{ route('destinatarios.index') }}">Destinatarios</a></li>
                                     <li><a class="dropdown-item" href="{{ route('oficinas.index') }}">Oficinas</a></li>
+                                    @if(auth()->user()->esAdministrador())
+                                        <li><a class="dropdown-item" href="{{ route('coberturas.index') }}">Coberturas</a></li>
+                                    @endif
+                                    @if(auth()->user()->rol === 'superadministrador')
+                                        <li><a class="dropdown-item" href="{{ route('usuarios.index') }}">Usuarios</a></li>
+                                    @endif
                                 </ul>
-                            </li>
+                                </li>
+                            @endif
                         @endauth
 
                     </ul>

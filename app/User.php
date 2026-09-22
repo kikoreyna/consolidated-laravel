@@ -17,7 +17,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'rol', 'activo',
     ];
 
     /**
@@ -36,5 +36,21 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'activo' => 'boolean',
     ];
+
+    public function bodegas()
+    {
+        return $this->belongsToMany(Bodega::class, 'bodega_user');
+    }
+
+    public function clientes()
+    {
+        return $this->belongsToMany(Cliente::class, 'cliente_user')->withPivot('activo');
+    }
+
+    public function esAdministrador()
+    {
+        return in_array($this->rol, ['administrador', 'superadministrador'], true);
+    }
 }

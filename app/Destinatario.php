@@ -14,6 +14,11 @@ class Destinatario extends Model
         'telefono',
         'correo_electronico',
         'direccion',
+        'codigo_postal',
+        'referencias',
+        'ciudad',
+        'estado',
+        'pais',
         'observaciones',
         'activo',
     ];

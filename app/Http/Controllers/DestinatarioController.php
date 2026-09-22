@@ -59,6 +59,11 @@ class DestinatarioController extends Controller
             'telefono' => 'nullable|string|max:50',
             'correo_electronico' => 'nullable|email|max:255',
             'direccion' => 'nullable|string',
+            'codigo_postal' => 'nullable|string|max:20',
+            'referencias' => 'nullable|string',
+            'ciudad' => 'nullable|string|max:255',
+            'estado' => 'nullable|string|max:255',
+            'pais' => 'nullable|string|max:255',
             'observaciones' => 'nullable|string',
             'activo' => 'required|boolean',
         ]);

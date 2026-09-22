@@ -10,6 +10,8 @@ class Entrada extends Model
 
     protected $fillable = [
         'numero',
+        'alias',
+        'observaciones',
         'alias_cliente_numero',
         'cliente_id',
         'consolidado_id',
@@ -23,11 +25,28 @@ class Entrada extends Model
         'reempacado_at',
         'created_by',
         'updated_by',
+        'bodega_id',
         'remitente_id',
         'destinatario_id',
         'transportadora_id',
         'oficina_id',
         'modalidad_entrega',
+        'destinatario_confirmado',
+        'destinatario_confirmado_at',
+        'destinatario_confirmado_por',
+        'recibido_usa_por',
+        'recibido_usa_at',
+        'recibido_mexico_por',
+        'recibido_mexico_at',
+        'reempacado_por',
+        'peso_usa',
+        'largo_usa',
+        'ancho_usa',
+        'alto_usa',
+        'volumen_usa',
+        'control_usa_tipo',
+        'control_usa_completado_at',
+        'control_usa_completado_por',
     ];
 
     protected $casts = [
@@ -35,6 +54,16 @@ class Entrada extends Model
         'recibido_at' => 'datetime',
         'cruce_at' => 'datetime',
         'reempacado_at' => 'datetime',
+        'destinatario_confirmado' => 'boolean',
+        'destinatario_confirmado_at' => 'datetime',
+        'recibido_usa_at' => 'datetime',
+        'recibido_mexico_at' => 'datetime',
+        'peso_usa' => 'decimal:3',
+        'largo_usa' => 'decimal:2',
+        'ancho_usa' => 'decimal:2',
+        'alto_usa' => 'decimal:2',
+        'volumen_usa' => 'decimal:2',
+        'control_usa_completado_at' => 'datetime',
     ];
 
     public function consolidado()
@@ -95,5 +124,25 @@ class Entrada extends Model
     public function oficina()
     {
         return $this->belongsTo(Oficina::class, 'oficina_id');
+    }
+
+    public function bodega()
+    {
+        return $this->belongsTo(Bodega::class, 'bodega_id');
+    }
+
+    public function destinatarioConfirmadoPor()
+    {
+        return $this->belongsTo(User::class, 'destinatario_confirmado_por');
+    }
+
+    public function recibidoUsaPor() { return $this->belongsTo(User::class, 'recibido_usa_por'); }
+    public function recibidoMexicoPor() { return $this->belongsTo(User::class, 'recibido_mexico_por'); }
+    public function reempacadoPor() { return $this->belongsTo(User::class, 'reempacado_por'); }
+    public function controlUsaCompletadoPor() { return $this->belongsTo(User::class, 'control_usa_completado_por'); }
+
+    public function movimientos()
+    {
+        return $this->hasMany(EntradaMovimiento::class)->orderBy('ocurrido_at', 'desc');
     }
 }

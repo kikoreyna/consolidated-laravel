@@ -23,6 +23,10 @@ class HomeController extends Controller
      */
     public function index()
     {
+        if (auth()->user()->rol === 'cliente') {
+            return redirect()->route('entradas.index');
+        }
+
         return view('home');
     }
 }

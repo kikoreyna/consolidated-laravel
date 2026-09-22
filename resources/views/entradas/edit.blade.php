@@ -21,13 +21,27 @@
                 </select>
             </div>
             <div class="col-md-6 mb-3">
+                <label>Alias de la guía</label>
+                <input type="text" name="alias" class="form-control" value="{{ old('alias', $entrada->alias) }}">
+            </div>
+            <div class="col-md-6 mb-3">
                 <label for="cliente_id">Cliente</label>
-                <select id="cliente_id" name="cliente_id" class="form-control" required>
-                    <option value="">Selecciona un cliente</option>
-                    @foreach($clientes as $cliente)
-                        <option value="{{ $cliente->id }}" {{ old('cliente_id', $entrada->cliente_id) == $cliente->id ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
-                    @endforeach
-                </select>
+                @if($entrada->consolidado_id)
+                    <input type="hidden" name="cliente_id" value="{{ $entrada->cliente_id }}">
+                    <input type="text" id="cliente_id" class="form-control" value="{{ optional($entrada->cliente)->nombre ?? 'Cliente no disponible' }}" readonly>
+                    <small class="text-muted">El cliente está determinado por el consolidado {{ optional($entrada->consolidado)->numero }}.</small>
+                @else
+                    <select id="cliente_id" name="cliente_id" class="form-control" required>
+                        <option value="">Selecciona un cliente</option>
+                        @foreach($clientes as $cliente)
+                            <option value="{{ $cliente->id }}" {{ old('cliente_id', $entrada->cliente_id) == $cliente->id ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
+                        @endforeach
+                    </select>
+                @endif
+            </div>
+            <div class="col-md-12 mb-3">
+                <label>Observaciones</label>
+                <textarea name="observaciones" class="form-control" rows="2">{{ old('observaciones', $entrada->observaciones) }}</textarea>
             </div>
             <div class="col-md-6 mb-3">
                 <label for="consolidado_id">Consolidado</label>
@@ -57,6 +71,27 @@
                         <option value="{{ $destinatario->id }}" {{ old('destinatario_id', $entrada->destinatario_id) == $destinatario->id ? 'selected' : '' }}>{{ $destinatario->nombre }}</option>
                     @endforeach
                 </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="bodega_id">Bodega</label>
+                <select id="bodega_id" name="bodega_id" class="form-control">
+                    <option value="">Sin bodega</option>
+                    @foreach($bodegas as $bodega)
+                        <option value="{{ $bodega->id }}" {{ old('bodega_id', $entrada->bodega_id) == $bodega->id ? 'selected' : '' }}>{{ $bodega->nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-12 mb-3">
+                <div class="form-check">
+                    <input type="hidden" name="destinatario_confirmado" value="0">
+                    <input type="checkbox" id="destinatario_confirmado" name="destinatario_confirmado" value="1" class="form-check-input" {{ old('destinatario_confirmado', $entrada->destinatario_confirmado) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="destinatario_confirmado">
+                        Confirmo que validé los datos del destinatario con el destinatario.
+                    </label>
+                </div>
+                @if($entrada->destinatario_confirmado)
+                    <small class="text-muted">Confirmado por {{ optional($entrada->destinatarioConfirmadoPor)->name ?? 'usuario no disponible' }} el {{ optional($entrada->destinatario_confirmado_at)->format('Y-m-d H:i') }}.</small>
+                @endif
             </div>
             <div class="col-md-4 mb-3">
                 <label for="modalidad_entrega">Modalidad de entrega</label>
@@ -91,6 +126,20 @@
             <div class="col-md-4 mb-3">
                 <label>Recibido</label>
                 <input type="datetime-local" name="recibido_at" class="form-control" value="{{ old('recibido_at', $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d\TH:i') : '') }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="form-check mt-4">
+                    <input type="checkbox" name="recibido_usa_confirmar" value="1" class="form-check-input" id="recibido_usa_confirmar">
+                    <label class="form-check-label" for="recibido_usa_confirmar">Marcar recibida en bodega USA ahora</label>
+                </div>
+                <small class="text-muted">{{ $entrada->recibido_usa_at ? 'Recibida por ' . optional($entrada->recibidoUsaPor)->name . ' el ' . $entrada->recibido_usa_at->format('Y-m-d H:i') : 'Pendiente' }}</small>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="form-check mt-4">
+                    <input type="checkbox" name="recibido_mexico_confirmar" value="1" class="form-check-input" id="recibido_mexico_confirmar">
+                    <label class="form-check-label" for="recibido_mexico_confirmar">Marcar recibida en bodega México ahora</label>
+                </div>
+                <small class="text-muted">{{ $entrada->recibido_mexico_at ? 'Recibida por ' . optional($entrada->recibidoMexicoPor)->name . ' el ' . $entrada->recibido_mexico_at->format('Y-m-d H:i') : 'Pendiente' }}</small>
             </div>
             <div class="col-md-4 mb-3">
                 <label for="conductor_id">Conductor</label>
