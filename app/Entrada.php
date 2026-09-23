@@ -44,6 +44,14 @@ class Entrada extends Model
         'ancho_usa',
         'alto_usa',
         'volumen_usa',
+        'peso_mexico',
+        'largo_mexico',
+        'ancho_mexico',
+        'alto_mexico',
+        'volumen_mexico',
+        'control_mexico_tipo',
+        'control_mexico_completado_at',
+        'control_mexico_completado_por',
         'control_usa_tipo',
         'control_usa_completado_at',
         'control_usa_completado_por',
@@ -73,6 +81,12 @@ class Entrada extends Model
         'ancho_usa' => 'decimal:2',
         'alto_usa' => 'decimal:2',
         'volumen_usa' => 'decimal:2',
+        'peso_mexico' => 'decimal:3',
+        'largo_mexico' => 'decimal:2',
+        'ancho_mexico' => 'decimal:2',
+        'alto_mexico' => 'decimal:2',
+        'volumen_mexico' => 'decimal:2',
+        'control_mexico_completado_at' => 'datetime',
         'control_usa_completado_at' => 'datetime',
         'peso_cliente' => 'decimal:3',
         'largo_cliente' => 'decimal:2',
@@ -166,6 +180,8 @@ class Entrada extends Model
     public function recibidoMexicoPor() { return $this->belongsTo(User::class, 'recibido_mexico_por'); }
     public function reempacadoPor() { return $this->belongsTo(User::class, 'reempacado_por'); }
     public function controlUsaCompletadoPor() { return $this->belongsTo(User::class, 'control_usa_completado_por'); }
+
+    public function controlMexicoCompletadoPor() { return $this->belongsTo(User::class, 'control_mexico_completado_por'); }
 
     public function movimientos()
     {

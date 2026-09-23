@@ -56,6 +56,9 @@
                                     @if(in_array(auth()->user()->rol, ['bodega_usa', 'documentador', 'supervisor', 'administrador', 'superadministrador'], true))
                                         <li><a class="dropdown-item" href="{{ route('bodega-usa') }}">Bodega USA</a></li>
                                     @endif
+                                    @if(in_array(auth()->user()->rol, ['bodega_mexico', 'supervisor', 'administrador', 'superadministrador'], true))
+                                        <li><a class="dropdown-item" href="{{ route('bodega-mexico') }}">Bodega México</a></li>
+                                    @endif
                                     <li><a class="dropdown-item" href="{{ route('mediciones.index') }}">Mediciones</a></li>
                                     <li><a class="dropdown-item" href="{{ route('observaciones.index') }}">Observaciones</a></li>
                                 </ul>

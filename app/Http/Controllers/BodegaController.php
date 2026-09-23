@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Bodega;
 use App\Entrada;
+use App\Conductor;
+use App\Vehiculo;
 use Illuminate\Http\Request;
 
 class BodegaController extends Controller
@@ -37,6 +39,29 @@ class BodegaController extends Controller
         session()->forget(['usa_pendiente', 'usa_scan_action']);
 
         return redirect()->route('bodega-usa');
+    }
+
+    public function mexico()
+    {
+        $entradas = Entrada::with(['cliente', 'consolidado'])
+            ->whereHas('bodega', function ($query) {
+                $query->whereIn('codigo', ['MEX', 'MEXICO']);
+            })
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('bodegas.mexico', [
+            'entradas' => $entradas,
+            'conductores' => Conductor::orderBy('nombre')->get(),
+            'vehiculos' => Vehiculo::orderBy('alias')->get(),
+        ]);
+    }
+
+    public function cambiarModoMexico()
+    {
+        session()->forget('mexico_pendiente');
+
+        return redirect()->route('bodega-mexico');
     }
 
     public function create()

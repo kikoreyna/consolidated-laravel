@@ -20,7 +20,9 @@
                             <tr><th colspan="2">Proceso</th></tr>
                             <tr><td>Recibido</td><td>{{ $entrada->recibido_at ? $entrada->recibido_at->format('Y-m-d H:i') : '' }}</td></tr>
                             <tr><td>En bodega USA por</td><td>{{ optional($entrada->recibidoUsaPor)->name ?? '' }}</td></tr>
-                            <tr><td>En bodega México por</td><td>{{ optional($entrada->recibidoMexicoPor)->name ?? '' }}</td></tr>
+                            <tr><td>Entrada a Bodega México</td><td>{{ $entrada->recibido_mexico_at ? $entrada->recibido_mexico_at->format('Y-m-d H:i') . ' - ' . optional($entrada->recibidoMexicoPor)->name : '' }}</td></tr>
+                            <tr><td>Peso México</td><td>{{ $entrada->formatMeasurement($entrada->peso_mexico) }}</td></tr>
+                            <tr><td>Medidas México</td><td>{{ $entrada->largo_mexico !== null ? $entrada->formatMeasurement($entrada->largo_mexico) . ' x ' . $entrada->formatMeasurement($entrada->ancho_mexico) . ' x ' . $entrada->formatMeasurement($entrada->alto_mexico) : '' }}</td></tr>
                             <tr><td>Conductor</td><td>{{ optional($entrada->conductor)->nombre ?? 'Sin conductor' }}</td></tr>
                             <tr><td>Vehículo</td><td>{{ optional($entrada->vehiculo)->alias ?? 'Sin vehículo' }}</td></tr>
                             <tr><td>Número de vuelta</td><td>{{ $entrada->vuelta ?? 'N/A' }}</td></tr>

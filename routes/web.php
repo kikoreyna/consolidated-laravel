@@ -37,12 +37,27 @@ Route::post('entradas/control-usa', 'EntradaController@controlUsa')
 Route::post('entradas/control-usa/completar', 'EntradaController@completeControlUsa')
     ->name('entradas.control-usa.complete')
     ->middleware('role:bodega_usa,supervisor,administrador,superadministrador');
+Route::post('entradas/control-mexico', 'EntradaController@controlMexico')
+    ->name('entradas.control-mexico')
+    ->middleware('role:bodega_mexico,supervisor,administrador,superadministrador');
+Route::post('entradas/control-mexico/completar', 'EntradaController@completeControlMexico')
+    ->name('entradas.control-mexico.complete')
+    ->middleware('role:bodega_mexico,supervisor,administrador,superadministrador');
 Route::get('bodega-usa', 'BodegaController@usa')
     ->name('bodega-usa')
     ->middleware('role:bodega_usa,supervisor,administrador,superadministrador');
 Route::get('bodega-usa/cambiar-modo', 'BodegaController@cambiarModo')
     ->name('bodega-usa.cambiar-modo')
     ->middleware('role:bodega_usa,supervisor,administrador,superadministrador');
+Route::get('bodega-mexico', 'BodegaController@mexico')
+    ->name('bodega-mexico')
+    ->middleware('role:bodega_mexico,supervisor,administrador,superadministrador');
+Route::get('bodega-mexico/cambiar-modo', 'BodegaController@cambiarModoMexico')
+    ->name('bodega-mexico.cambiar-modo')
+    ->middleware('role:bodega_mexico,supervisor,administrador,superadministrador');
+Route::post('bodega-mexico/configurar', 'EntradaController@configurarMexico')
+    ->name('bodega-mexico.configurar')
+    ->middleware('role:bodega_mexico,supervisor,administrador,superadministrador');
 
 Route::middleware('not-client')->group(function () {
     Route::resource('clientes', 'ClienteController');

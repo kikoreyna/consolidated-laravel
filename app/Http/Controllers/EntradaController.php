@@ -17,6 +17,7 @@ use App\Oficina;
 use App\Bodega;
 use App\EntradaMovimiento;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class EntradaController extends Controller
@@ -105,6 +106,132 @@ class EntradaController extends Controller
         return redirect()->route('bodega-usa')->with('success', 'Control USA registrado para la guía ' . $entrada->numero . '.');
     }
 
+    public function controlMexico(Request $request)
+    {
+        if (!session('mexico_contexto.conductor_id') || !session('mexico_contexto.vehiculo_id')) {
+            return redirect()->route('bodega-mexico')->with('error', 'Configura el conductor y vehículo antes de escanear guías.');
+        }
+
+        $data = $request->validate([
+            'numero' => 'required|string|max:255',
+            'accion' => 'required|in:solo_recibido,solo_pesar,pesar_medir',
+            'observacion' => 'nullable|string',
+            'incidente' => 'nullable|string|max:100',
+        ]);
+
+        $entrada = Entrada::with('bodega')->where('numero', $data['numero'])->first();
+        $sinEntradaUsa = !$entrada || !$entrada->recibido_usa_at;
+        $bodegaMexico = $this->mexicoBodegaForUser();
+
+        if (!$entrada) {
+            $entrada = Entrada::create([
+                'numero' => $data['numero'],
+                'alias_cliente_numero' => false,
+                'cliente_id' => null,
+                'consolidado_id' => null,
+                'bodega_id' => $bodegaMexico->id,
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]);
+            $this->logMovement($entrada, 'creada_sin_consolidar_mexico', 'Guía no existente registrada por escaneo en Bodega México.');
+        } elseif ((int) $entrada->bodega_id !== (int) $bodegaMexico->id) {
+            $entrada->update(['bodega_id' => $bodegaMexico->id, 'updated_by' => auth()->id()]);
+            $entrada->load('bodega');
+            $this->logMovement($entrada, 'asignada_bodega_mexico', 'Guía asignada a Bodega México por escaneo.');
+        }
+
+        $this->authorizeEntry($entrada);
+
+        session(['mexico_pendiente' => [
+            'entrada_id' => $entrada->id,
+            'numero' => $entrada->numero,
+            'accion' => $data['accion'],
+            'observacion' => $data['observacion'] ?? '',
+            'incidente' => $data['incidente'] ?? '',
+            'sin_entrada_usa' => $sinEntradaUsa,
+        ]]);
+
+        if ($sinEntradaUsa) {
+            $mensaje = 'La guía llegó a Bodega México sin entrada registrada en USA.';
+            session()->flash('warning', $mensaje);
+            $this->notifyMissingUsaEntry($entrada);
+        }
+
+        return redirect()->route('bodega-mexico');
+    }
+
+    public function configurarMexico(Request $request)
+    {
+        $data = $request->validate([
+            'conductor_id' => 'required|integer|exists:conductores,id',
+            'vehiculo_id' => 'required|integer|exists:vehiculos,id',
+            'vuelta' => 'nullable|integer|min:0',
+        ]);
+
+        session(['mexico_contexto' => $data]);
+
+        return redirect()->route('bodega-mexico')->with('success', 'Conductor, vehículo y vuelta configurados para los siguientes escaneos.');
+    }
+
+    public function completeControlMexico(Request $request)
+    {
+        $data = $request->validate([
+            'entrada_id' => 'required|integer|exists:entradas,id',
+            'accion' => 'required|in:solo_recibido,solo_pesar,pesar_medir',
+            'peso_mexico' => 'required|numeric|min:0',
+            'largo_mexico' => 'nullable|numeric|min:0',
+            'ancho_mexico' => 'nullable|numeric|min:0',
+            'alto_mexico' => 'nullable|numeric|min:0',
+            'observacion' => 'nullable|string',
+            'incidente' => 'nullable|string|max:100',
+        ]);
+
+        $entrada = Entrada::with('bodega')->findOrFail($data['entrada_id']);
+        $this->authorizeEntry($entrada);
+
+        $contexto = session('mexico_contexto');
+        if (!$contexto || empty($contexto['conductor_id']) || empty($contexto['vehiculo_id'])) {
+            throw ValidationException::withMessages([
+                'conductor_id' => 'Configura el conductor y vehículo antes de escanear guías.',
+            ]);
+        }
+
+        if ($data['accion'] === 'pesar_medir' && (empty($data['largo_mexico']) || empty($data['ancho_mexico']) || empty($data['alto_mexico']))) {
+            abort(422, 'Largo, ancho y alto son obligatorios para pesar y medir.');
+        }
+
+        $update = [
+            'recibido_mexico_at' => now(),
+            'recibido_mexico_por' => auth()->id(),
+            'conductor_id' => $contexto['conductor_id'],
+            'vehiculo_id' => $contexto['vehiculo_id'],
+            'vuelta' => $contexto['vuelta'] ?? null,
+            'cruce_at' => now(),
+            'control_mexico_tipo' => $data['accion'],
+            'control_mexico_completado_at' => now(),
+            'control_mexico_completado_por' => auth()->id(),
+            'peso_mexico' => $data['peso_mexico'],
+            'largo_mexico' => $data['largo_mexico'] ?? null,
+            'ancho_mexico' => $data['ancho_mexico'] ?? null,
+            'alto_mexico' => $data['alto_mexico'] ?? null,
+            'volumen_mexico' => $data['accion'] === 'pesar_medir' ? $data['largo_mexico'] * $data['ancho_mexico'] * $data['alto_mexico'] : null,
+        ];
+
+        $entrada->update($update);
+        $this->logMovement($entrada, 'recibido_mexico', $data['observacion'] ?? 'Entrada registrada en Bodega México.', [
+            'incidente' => $data['incidente'] ?? '',
+            'peso_mexico' => $data['peso_mexico'],
+            'conductor_id' => $contexto['conductor_id'],
+            'vehiculo_id' => $contexto['vehiculo_id'],
+        ]);
+        if (session('mexico_pendiente.sin_entrada_usa')) {
+            session()->flash('warning', 'La guía fue registrada en México, pero llegó sin entrada registrada en USA.');
+        }
+        session()->forget('mexico_pendiente');
+
+        return redirect()->route('bodega-mexico')->with('success', 'Entrada registrada en Bodega México para la guía ' . $entrada->numero . '.');
+    }
+
     public function create()
     {
         $this->authorizeOperationalAccess();
@@ -139,6 +266,11 @@ class EntradaController extends Controller
             'reempacador_id' => 'nullable|integer',
             'codigor_id' => 'nullable|integer',
             'reempacado_at' => 'nullable|date',
+            'peso_cliente' => 'nullable|numeric|min:0',
+            'largo_cliente' => 'nullable|numeric|min:0',
+            'ancho_cliente' => 'nullable|numeric|min:0',
+            'alto_cliente' => 'nullable|numeric|min:0',
+            'volumen_cliente' => 'nullable|numeric|min:0',
             'recibido_usa_confirmar' => 'nullable|boolean',
             'recibido_mexico_confirmar' => 'nullable|boolean',
         ]);
@@ -156,7 +288,8 @@ class EntradaController extends Controller
             'remitente_id', 'destinatario_id', 'transportadora_id', 'oficina_id',
             'modalidad_entrega', 'alias', 'observaciones', 'vuelta', 'recibido_at', 'conductor_id',
             'vehiculo_id', 'cruce_at', 'reempacador_id', 'codigor_id',
-            'reempacado_at',
+            'reempacado_at', 'peso_cliente', 'largo_cliente', 'ancho_cliente',
+            'alto_cliente', 'volumen_cliente',
         ]);
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
@@ -276,6 +409,11 @@ class EntradaController extends Controller
             'reempacador_id' => 'nullable|integer',
             'codigor_id' => 'nullable|integer',
             'reempacado_at' => 'nullable|date',
+            'peso_cliente' => 'nullable|numeric|min:0',
+            'largo_cliente' => 'nullable|numeric|min:0',
+            'ancho_cliente' => 'nullable|numeric|min:0',
+            'alto_cliente' => 'nullable|numeric|min:0',
+            'volumen_cliente' => 'nullable|numeric|min:0',
             'recibido_usa_confirmar' => 'nullable|boolean',
             'recibido_mexico_confirmar' => 'nullable|boolean',
         ]);
@@ -293,7 +431,8 @@ class EntradaController extends Controller
             'remitente_id', 'destinatario_id', 'transportadora_id', 'oficina_id',
             'modalidad_entrega', 'alias', 'observaciones', 'vuelta', 'recibido_at', 'conductor_id',
             'vehiculo_id', 'cruce_at', 'reempacador_id', 'codigor_id',
-            'reempacado_at',
+            'reempacado_at', 'peso_cliente', 'largo_cliente', 'ancho_cliente',
+            'alto_cliente', 'volumen_cliente',
         ]);
         $destinatarioCambio = (int) $entrada->destinatario_id !== (int) ($data['destinatario_id'] ?? 0);
         $bodegaAnterior = $entrada->bodega_id;
@@ -349,7 +488,7 @@ class EntradaController extends Controller
             $this->logMovement($entrada, 'actualizada', 'Datos de la guía actualizados');
         }
 
-        return redirect()->route('entradas.index')->with('success', 'Entrada actualizada correctamente.');
+        return redirect()->route('entradas.show', $entrada)->with('success', 'Entrada actualizada correctamente.');
     }
 
     public function destroy(Entrada $entrada)
@@ -393,6 +532,10 @@ class EntradaController extends Controller
         }
 
         if ($user->rol === 'bodega_usa') {
+            return $query->whereIn('bodega_id', $user->bodegas()->pluck('bodegas.id'));
+        }
+
+        if ($user->rol === 'bodega_mexico') {
             return $query->whereIn('bodega_id', $user->bodegas()->pluck('bodegas.id'));
         }
 
@@ -489,6 +632,52 @@ class EntradaController extends Controller
         }
 
         return $bodegaUsa;
+    }
+
+    private function mexicoBodegaForUser()
+    {
+        $bodegaMexico = Bodega::whereIn('codigo', ['MEX', 'MEXICO'])
+            ->whereIn('id', auth()->user()->bodegas()->pluck('bodegas.id'))
+            ->first();
+
+        if (!$bodegaMexico && in_array(auth()->user()->rol, ['supervisor', 'administrador', 'superadministrador'], true)) {
+            $bodegaMexico = Bodega::where('codigo', 'MEXICO')->first();
+            if (!$bodegaMexico) {
+                $bodegaMexico = Bodega::create([
+                    'nombre' => 'Bodega México',
+                    'descripcion' => 'Recepción y control en México.',
+                    'codigo' => 'MEXICO',
+                    'pais' => 'México',
+                    'activa' => true,
+                ]);
+            }
+        }
+
+        if (!$bodegaMexico) {
+            abort(422, 'No tienes una bodega México asignada para registrar esta guía.');
+        }
+
+        return $bodegaMexico;
+    }
+
+    private function notifyMissingUsaEntry(Entrada $entrada)
+    {
+        $destino = env('MAIL_INTERNAL_TO', config('mail.from.address'));
+
+        if (!$destino) {
+            return;
+        }
+
+        try {
+            Mail::raw(
+                'La guía ' . $entrada->numero . ' llegó a Bodega México sin entrada registrada en Bodega USA. Usuario: ' . auth()->user()->name . '.',
+                function ($message) use ($destino, $entrada) {
+                    $message->to($destino)->subject('Alerta: guía sin entrada USA - ' . $entrada->numero);
+                }
+            );
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
     }
 
     private function completeUsaControl(Entrada $entrada, $accion, array $data = [])
