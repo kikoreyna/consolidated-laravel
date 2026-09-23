@@ -12,7 +12,7 @@ class EntradaCrudTest extends TestCase
 
     public function test_user_can_create_and_view_entradas()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['rol' => 'administrador', 'activo' => true]);
 
         $this->actingAs($user)
             ->post('/entradas', [

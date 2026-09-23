@@ -1,5 +1,6 @@
 <?php
 
+use Database\Seeders\OperationalAccessSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -16,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UsersTableSeeder::class,
             BodegasTableSeeder::class,
             ClientesTableSeeder::class,
+            OperationalAccessSeeder::class,
             CodigosrTableSeeder::class,
             ConductoresTableSeeder::class,
             ConsolidadosTableSeeder::class,
