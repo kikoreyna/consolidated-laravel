@@ -124,10 +124,6 @@
         </div>
     </div>
 
-    @if(!$consolidado->cerrado && auth()->user()->rol !== 'cliente')
-        <a href="{{ route('consolidados.importar', $consolidado) }}" class="btn btn-outline-primary mt-3">Agregar guías desde CSV</a>
-    @endif
-
     <div class="mt-3">
         <a href="{{ route('consolidados.index') }}" class="btn btn-secondary">Volver</a>
     </div>
