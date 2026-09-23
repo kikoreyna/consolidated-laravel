@@ -40,7 +40,7 @@
             </div>
             <div class="col-md-12 mb-3">
                 <div class="form-check">
-                    <input type="checkbox" name="cerrado" value="1" class="form-check-input" id="cerrado">
+                    <input type="checkbox" name="cerrado" value="1" class="form-check-input" id="cerrado" {{ old('cerrado', $consolidado->cerrado) ? 'checked' : '' }}>
                     <label class="form-check-label" for="cerrado">Validar y cerrar consolidado</label>
                 </div>
                 <small class="text-muted">Al cerrarlo ya no podrá modificarse.</small>

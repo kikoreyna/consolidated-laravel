@@ -375,7 +375,7 @@ class ConsolidadoController extends Controller
             $data = $request->only(['numero', 'palets', 'cliente_id', 'cliente_alias_numero', 'notificacion']);
             $data['notificacion'] = $data['notificacion'] ?? $consolidado->notificacion ?? now();
 
-            if ($request->boolean('cerrado')) {
+            if ($request->boolean('cerrado') && !$consolidado->cerrado) {
                 $data['cerrado'] = true;
                 $data['cerrado_at'] = now();
                 $data['cerrado_por'] = auth()->id();
@@ -392,7 +392,7 @@ class ConsolidadoController extends Controller
             if ($cambios) {
                 $this->logMovement($consolidado, $clienteCambio ? 'cliente_cambiado' : 'actualizado', 'Datos del consolidado actualizados', $cambios);
             }
-            if ($request->boolean('cerrado')) {
+            if ($request->boolean('cerrado') && !$consolidado->cerrado) {
                 $this->logMovement($consolidado, 'cerrado', 'Consolidado validado y cerrado');
             }
 
